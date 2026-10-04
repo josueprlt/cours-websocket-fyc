@@ -1,49 +1,45 @@
-# Séquence 1 — Version révisée WebSocket natif
+# Séquence 2 — Ouvrir et gérer une connexion WebSocket
 
-Cette version remplace pédagogiquement le premier kit. Elle suit la scénarisation transmise le 3 octobre : **45 minutes pour S1, sept séquences et une évaluation/conclusion séparée ; environ 11 h 30 au total**. L’évaluation finale reste prévue avec 30 questions et leur correction, sans constituer une séquence de déploiement.
+**Durée : environ 1 h 30.** Ce dossier prolonge `sequence-1-v2` et suit la scénarisation du parcours à sept séquences.
 
-## Commencer par le cours
+## Commencer ici
 
-- **01-cours-apprenant.md** : cours réécrit, comparaison HTTP/polling/WebSocket, connexions individuelles, responsabilités serveur et schéma à compléter.
-- **02-qcm-positionnement.md** : huit questions pour sept minutes de réponse.
-- **03-corriges.md** : trois minutes de correction ciblée du QCM, plus correction du schéma après sa réalisation.
-- **04-installation-et-checklist.md** : démarrage du frontend ET du backend en quinze minutes.
-- **05-guide-formateur.md** : déroulé, validation et cohérence avec les séquences suivantes.
-- **06-scripts-videos.md** : présentation de l’équipe à personnaliser, présentation du cours, storyboard de démonstration et courte vidéo explicative.
-- **07-approfondissement-websocket.md** : complément sur connexion/message/trame, TCP/TLS, ouverture, états, confirmations et coupures.
-- **08-verifications.md** : vérifications techniques réellement effectuées et périmètre.
+1. **01-cours-apprenant.md** — contenu à étudier : adresse, handshake HTTP/1.1, événements, état et fermeture.
+2. **02-tp-guide.md** — réalisation de six TODO dans un seul fichier.
+3. **03-fiche-reference.md** — aide à consulter pendant le code.
+4. **04-tests-et-validation.md** — cinq scénarios et bilan de sortie.
+5. **05-corrige-commente.md** — correction à consulter après tentative.
+6. **06-guide-formateur.md** — déroulé sur 90 minutes, accompagnement et articulation avec le parcours.
+7. **07-scripts-videos.md** — handshake, repérage en live coding et correction ; scripts à enregistrer.
+8. **08-verifications.md** — contrôles réellement effectués sur les projets.
 
-## Ce qui change
+## Projets et distribution
 
-| Première proposition | Version révisée |
-|---|---|
-| Socket.IO retenu pour les exercices | API WebSocket native + NestJS/WsAdapter/ws |
-| S1 d’une heure | S1 d’environ 45 minutes |
-| Front statique seul à lancer | Frontend et backend fournis et démarrés |
-| Théorie courte, manipulation JSON développée | Théorie WebSocket renforcée ; manipulation JSON reportée à S3 |
-| Modification du titre comme preuve | Schéma complété et checklist des deux services |
-| Ancienne séquence de déploiement annoncée | Sept séquences puis évaluation et conclusion |
+- `projet-apprenant/` : interface fournie et six emplacements à compléter. Le squelette se compile mais ne se connecte pas avant réalisation du premier TODO.
+- `projet-corrige/` : solution fonctionnelle de la séquence.
+- `sequence-2-apprenant.bundle` : dépôt Git du squelette seul.
+- `sequence-2-corrige.bundle` : dépôt Git séparé du corrigé.
 
-Socket.IO est seulement situé pour éviter une confusion de vocabulaire. Le QCM conserve une question simple de reconnaissance du JSON, conformément aux prérequis de la nouvelle scénarisation.
+L’archive complète est destinée au formateur : elle contient les solutions. Pour les apprenants, distribuer seulement le dossier ou bundle apprenant et les supports avant corrigé.
 
-## Projet fourni
-
-Le dossier `projet/` contient les sources et le verrouillage des dépendances. Le bundle `messagerie-native.bundle` permet un vrai clonage Git local. Aucun hébergement distant n’est nécessaire.
-
-Depuis ce dossier, après décompression :
+Depuis le dossier contenant le bundle :
 
 ```sh
-git clone messagerie-native.bundle messagerie-websocket
-cd messagerie-websocket
+git clone sequence-2-apprenant.bundle messagerie-sequence-2
+cd messagerie-sequence-2
 npm ci
 ```
 
-Puis `npm run dev:back` et `npm run dev:front` dans deux terminaux. Node 24.x requis.
+Puis `npm run dev:back` et `npm run dev:front` dans deux terminaux. Node 24.x requis. Arrêter les services de S1 avant le démarrage ; les ports restent 3000 et 5173. Les instructions de reprise directe du dépôt S1 figurent dans le TP.
 
-Les connexions du frontend, échanges métier, confirmations, validations et salons restent à réaliser pendant les séquences prévues. Le backend est configuré pour accueillir le futur client natif, mais le starter ne constitue pas une messagerie cible complète.
+## Frontières pédagogiques
 
-## À préparer pour la diffusion
+S1 répondait à « pourquoi ce protocole ? ». S2 répond à « comment ouvrir, observer et fermer cette connexion ? ». Les notions évoquées dans l’approfondissement facultatif S1 deviennent ici des manipulations et des diagnostics.
 
-Les supports sont en Markdown, éditables et réutilisables dans le LMS. Les vidéos sont livrées sous forme de scripts et de storyboard, pas d’enregistrements. La présentation de l’équipe contient des champs à renseigner. Une vraie démonstration finale exige une version complète du projet détenue par le formateur ; le storyboard prévoit une alternative illustrée clairement signalée.
+Le cours ne reprend pas la comparaison avec le polling ni le schéma de diffusion entre utilisateurs. Aucun envoi de contenu, traitement JSON, registre de clients, algorithme de reconnexion, confirmation métier ou salon n’est à programmer dans S2.
 
-Les références techniques officielles sont liées aux explications. Le point sur la durée, les activités et les objectifs provient de la scénarisation fournie, pas de recommandations inventées pour élargir le programme.
+La partie réseau est une vérification brève dans le TP, pas une activité autonome de vingt minutes. L’écran de connexion remplace provisoirement le formulaire de chat pour isoler l’objectif de S2. Le serveur fourni reste celui de S1.
+
+## État des livrables
+
+Les cours sont éditables en Markdown. Les vidéos sont fournies comme scripts et déroulés de capture, sans enregistrement. Les dépôts Git sont locaux et clonables ; aucun dépôt distant n’a été publié. Les preuves et limites de test sont documentées dans le rapport de vérification.

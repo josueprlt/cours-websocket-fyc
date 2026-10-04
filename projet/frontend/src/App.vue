@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 
-// Données de démonstration : aucun backend ni envoi réseau dans cette séquence.
+// Données de démonstration : backend fourni, mais aucun envoi réseau depuis cette interface.
 const projectTitle = 'Le Salon';
 const draft = ref('');
 const notice = ref('');
@@ -13,7 +13,7 @@ const messages = [
 
 function previewOnly() {
   notice.value = draft.value.trim()
-    ? 'Aperçu uniquement : votre texte n’a pas été envoyé. Le serveur sera construit à la séquence 2.'
+    ? 'Aperçu uniquement : votre texte n’a pas été envoyé. La connexion du navigateur sera ajoutée à la séquence 2.'
     : 'Saisissez un texte pour explorer le formulaire. Aucun message ne sera envoyé.';
 }
 </script>
@@ -26,7 +26,7 @@ function previewOnly() {
         <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">{{ projectTitle }}</h1>
         <p class="mt-3 text-slate-600">Une interface aujourd’hui. Une conversation en temps réel demain.</p>
       </div>
-      <span class="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900">Mode statique · aucun serveur de chat</span>
+      <span class="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900">Interface statique · connexion à venir</span>
     </header>
 
     <div class="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm md:grid-cols-[230px_1fr]">
@@ -36,7 +36,7 @@ function previewOnly() {
         <p class="mt-5 text-sm leading-6 text-slate-600">Le choix des salons arrivera à la séquence 7.</p>
         <div class="mt-8 border-t border-slate-300 pt-5 text-sm leading-6">
           <p class="font-semibold">Votre mission</p>
-          <p class="mt-2 text-slate-600">Lancer le projet, repérer les composants et comprendre ce qu’il reste à connecter.</p>
+          <p class="mt-2 text-slate-600">Démarrer le frontend et le backend, puis expliquer le trajet d’un message.</p>
         </div>
       </aside>
 
@@ -65,6 +65,6 @@ function previewOnly() {
         </form>
       </section>
     </div>
-    <footer class="mt-6 flex flex-wrap justify-between gap-2 text-xs text-slate-500"><span>Vue 3 · Tailwind CSS · Vite</span><span>Séquence 1 / Onboarding & positionnement</span></footer>
+    <footer class="mt-6 flex flex-wrap justify-between gap-2 text-xs text-slate-500"><span>Vue 3 · Tailwind CSS · Vite</span><span>Séquence 1 / Pourquoi WebSocket ?</span></footer>
   </main>
 </template>

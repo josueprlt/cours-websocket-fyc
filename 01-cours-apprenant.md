@@ -1,294 +1,192 @@
-# Maîtriser le WebSocket au travers d’une application de messagerie instantanée
-## Séquence 1 — Onboarding & positionnement
+# Séquence 1 — Comprendre pourquoi une messagerie utilise WebSocket
 
-**Durée : 1 heure · Phase 1 : fondations · Niveau : initiation au temps réel**
+**Formation : Maîtriser le WebSocket au travers d’une application de messagerie instantanée**  
+**Durée : environ 45 minutes · WebSocket natif · Version révisée**
 
-Bienvenue ! Dans cette formation, vous allez transformer une interface de messagerie en application capable de faire circuler des messages entre plusieurs utilisateurs. Cette première séance sert à comprendre le projet et à préparer votre environnement. À la fin de l’heure, l’interface doit fonctionner sur votre ordinateur ; les échanges réseau du chat seront construits dans les séquences suivantes.
+À la fin de cette séquence, vous saurez expliquer pourquoi notre messagerie utilise WebSocket et vous disposerez d’un frontend et d’un backend démarrés sur votre ordinateur. Vous n’avez pas encore à programmer une connexion : ce sera l’objectif de la séquence 2.
 
-### 1. Ce que vous saurez faire
+## Votre parcours dans cette séquence
 
-À l’issue de cette séquence, vous pourrez :
+| Étape | Durée | Travail attendu |
+|---|---:|---|
+| Découvrir le cours | 5 min | Visionner la présentation et observer la messagerie cible |
+| Vérifier les prérequis | 10 min | Répondre au QCM puis lire la correction de vos erreurs |
+| Comprendre le choix de WebSocket | 15 min | Lire le cours, suivre la courte vidéo et compléter le schéma |
+| Lancer le projet | 15 min | Installer les dépendances, démarrer les deux services et remplir la checklist |
 
-- raconter le trajet d’un message entre deux utilisateurs en identifiant le rôle du serveur ;
-- expliquer l’intérêt d’une connexion WebSocket pour un chat ;
-- distinguer une interface affichée à l’écran d’une application réellement connectée ;
-- cloner le projet, installer ses dépendances et lancer le front en local ;
-- repérer les connaissances JavaScript et HTTP à consolider.
+**Prérequis matériels :** Node.js 24, npm, Git, un éditeur et un navigateur installés avant la séance. La connaissance de JavaScript, des événements et des échanges HTTP sera vérifiée par le QCM.
 
-**Critères de réussite :** l’interface s’affiche, une modification du titre apparaît dans le navigateur et vous savez expliquer pourquoi le bouton de démonstration n’envoie encore aucun message à un autre utilisateur.
+## 1. Ce que vous allez construire
 
-### 2. Votre parcours pendant cette heure
+Camille et Alex ouvrent chacun la messagerie dans leur navigateur. Camille écrit « On se retrouve dans le salon #dev ? ». Alex voit le message apparaître sans recharger sa page. Il répond ; Camille voit la réponse. Si le réseau coupe, l’interface l’indique. Lorsqu’un envoi est confirmé, l’utilisateur sait que le serveur l’a traité. Si le message est invalide ou trop fréquent, le serveur le refuse.
 
-| Temps | Activité | Résultat attendu |
-|---|---|---|
-| 00–03 min | Introduction vidéo ou présentation orale | Identifier le projet et l’objectif du jour |
-| 03–08 min | Découverte de la maquette | Repérer les fonctions à construire |
-| 08–18 min | QCM individuel de positionnement | Faire le point sur JavaScript et HTTP |
-| 18–23 min | Correction et orientation | Choisir une notion à revoir |
-| 23–35 min | Cours : du clic au message reçu | Comprendre le rôle du WebSocket |
-| 35–53 min | Installation et exploration | Lancer le front Vue/Tailwind |
-| 53–58 min | Vérification en binôme | Prouver le fonctionnement local |
-| 58–60 min | Bilan de sortie | Formuler les acquis et les blocages |
+Ce comportement se construira progressivement :
 
-**Avant la séance :** disposer d’un navigateur récent, d’un éditeur de code, de Git, de Node.js 24 LTS avec npm et d’un accès au dépôt donné par le formateur. L’installation de ces outils doit être anticipée pour garder l’atelier dans l’heure. Le QCM mesure vos acquis ; il ne vous demande aucune connaissance préalable du WebSocket.
-
-### 3. Le projet : une messagerie qui prend vie progressivement
-
-Imaginez que Camille et Alex ouvrent chacun l’application. Camille écrit « Bonjour ! ». Alex doit recevoir le message sans recharger sa page. Plus tard, ils pourront rejoindre des salons, utiliser des commandes et constater les effets d’une interruption réseau.
-
-Le parcours complet représente **14 h 30** : 5 h de fondations, 6 h d’interactions temps réel et 3 h 30 d’extension et de déploiement.
-
-| Étape | Évolution visible du projet |
+| Séquence | Résultat dans le projet |
 |---|---|
-| Séquence 1 | L’interface s’affiche sur votre ordinateur |
-| Séquence 2 | Le serveur accepte une connexion |
-| Séquence 3 | Un client envoie et reçoit des messages |
-| Séquence 4 | Le serveur diffuse aux autres utilisateurs |
-| Séquence 5 | L’interface réagit immédiatement et suit la confirmation serveur |
-| Séquence 6 | Des commandes et une limitation anti-spam enrichissent le chat |
-| Séquence 7 | Les conversations sont réparties dans des salons |
-| Séquence 8 | Vous validez vos acquis et découvrez le déploiement |
+| S1 · 45 min | Environnement démarré et choix de WebSocket compris |
+| S2 · 1 h 30 | Connexion native ouverte, état affiché, fermeture comprise |
+| S3 · 1 h 30 | Aller-retour d’un message entre navigateur et serveur |
+| S4 · 1 h 30 | Discussion entre plusieurs utilisateurs |
+| S5 · 2 h | Reconnexion et résultat des envois affiché |
+| S6 · 2 h | Validation des messages et limitation des abus |
+| S7 · 1 h 30 | Salons #general et #dev, puis recette de la messagerie |
+| Évaluation et conclusion · 45 min | QCM final, correction et bilan |
 
-**Aujourd’hui, la maquette contient trois messages fictifs.** Ils proviennent d’un tableau dans le code. Ils ne prouvent pas qu’un serveur de messagerie fonctionne. Le bouton « Envoyer (démo) » affiche uniquement une explication locale.
+Le parcours représente **environ 11 h 30**. Le frontend Vue et le socle NestJS sont fournis pour concentrer votre travail sur WebSocket. Aucun déploiement n’est demandé.
 
-**Activité d’observation — 2 minutes.** Repérez la liste des messages, le champ de saisie, le bouton et l’indication de statut. Pour chacun, dites ce qui est purement visuel et ce qui nécessitera le serveur. Exemple : dessiner une bulle est une responsabilité de l’interface ; livrer son contenu à un autre navigateur nécessite une communication réseau.
+## 2. Le problème à résoudre : recevoir au bon moment
 
-### 4. Comprendre le trajet d’un message
+Pour Camille, envoyer un message semble simple : cliquer sur un bouton. Pour Alex, la situation est différente : son navigateur doit afficher un message dont il ne connaît pas à l’avance l’heure d’arrivée.
 
-#### 4.1 Client, serveur et réseau
+Un bouton ne résout pas ce problème. Le serveur doit disposer d’un moyen de prévenir le navigateur d’Alex, puis ce navigateur doit réagir à l’arrivée des données. C’est la question centrale de cette séquence : **comment faire parvenir une nouveauté à un navigateur sans lui demander d’actualiser la conversation en permanence ?**
 
-Le **client** est ici le code exécuté dans le navigateur. Il affiche la conversation, recueille le texte saisi et réagit aux événements. Vue.js nous aide à faire évoluer l’interface quand les données changent. Tailwind CSS sert à la mise en forme.
+Gardez trois rôles distincts :
 
-Le **serveur de messagerie**, que nous construirons avec NestJS, reçoit les données des clients, les contrôle et décide à qui les transmettre. Le client de Camille ne connaît pas directement celui d’Alex : tous deux communiquent avec le serveur.
+- **Le navigateur de Camille** recueille sa saisie et déclenche l’envoi.
+- **Le serveur** reçoit les données et décide des destinataires.
+- **Le navigateur d’Alex** reçoit les données puis met à jour son interface.
+
+Le WebSocket fournit un canal de communication. Il ne dessine pas la bulle du message et ne décide pas à lui seul à quel salon elle appartient.
+
+## 3. Première possibilité : demander régulièrement en HTTP
+
+### Une requête obtient une réponse
+
+Dans un échange HTTP classique, le client demande une ressource et le serveur répond. Le navigateur pourrait demander la liste des nouveaux messages avec une requête `GET /messages`. Cela peut se faire en JavaScript sans recharger la page entière. HTTP peut aussi réutiliser une connexion : une requête supplémentaire ne signifie pas nécessairement une nouvelle connexion réseau. [Comprendre HTTP — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview).
+
+Supposons que le serveur réponde à Alex : « Aucun nouveau message ». Une seconde plus tard, Camille écrit. La réponse précédente est terminée : pour connaître la nouveauté avec ce fonctionnement, Alex doit lancer une autre demande.
+
+### Le polling : interroger à intervalle régulier
+
+On peut automatiser ces demandes, par exemple toutes les trois secondes. C’est le **polling périodique**.
 
 ```text
-Navigateur de Camille          Serveur de messagerie          Navigateur d’Alex
-         |                              |                             |
-         |------ « Bonjour ! » -------->|                             |
-         |                              | contrôle le message         |
-         |                              |------ « Bonjour ! » ------->|
-         |                              |                             | affiche
+Temps        Navigateur d’Alex                  Serveur
+0 s          ── « Du nouveau ? » ───────────────>
+             <────────────────────── « Non » ──
+1 s                                             Reçoit « Bonjour » de Camille
+2 s          Alex attend encore…
+3 s          ── « Du nouveau ? » ───────────────>
+             <──────────────── « Bonjour » ────
+             Affiche le message
 ```
 
-Ce dessin est une vue simplifiée du comportement que vous construirez. Il suppose les connexions déjà établies. Les confirmations, erreurs et reconnexions seront ajoutées plus tard.
+Dans cet exemple, le délai ajouté par l’attente du prochain sondage est de deux secondes. Il dépend du moment où le message arrive : de presque zéro à presque trois secondes, auxquels s’ajoutent transport et traitement.
 
-**Question de compréhension.** Si le navigateur d’Alex est fermé, suffit-il qu’un message soit envoyé pour qu’Alex le lise à son retour ? Non. Il faudra définir une stratégie de stockage et de récupération. Une connexion temps réel ne constitue pas un historique persistant.
+Diminuer l’intervalle réduit l’attente, mais multiplie les demandes. Pour 100 navigateurs interrogeant toutes les trois secondes, on obtient environ **100 / 3 = 33 requêtes par seconde**, même si personne ne parle. Ce calcul ne mesure pas à lui seul la charge totale du serveur ; il montre le coût des interrogations répétées.
 
-#### 4.2 Le modèle HTTP que vous connaissez déjà
+Le polling reste utilisable pour une information qui change rarement. Pour une conversation animée, nous cherchons un mécanisme qui permette de transmettre la nouveauté dès qu’elle est disponible.
 
-Dans un échange HTTP classique, le navigateur envoie une requête et le serveur renvoie une réponse. Par exemple, `GET /messages` peut demander une liste de messages. Le serveur répond avec un statut et des données. Le frontend peut demander ces données avec `fetch()` sans recharger toute la page.
+## 4. WebSocket : établir un canal puis échanger
 
-Avec un **polling périodique**, le navigateur recommence la demande à intervalle régulier : « Y a-t-il du nouveau ? ». Même lorsqu’aucun message n’arrive, il continue à interroger le serveur.
+### Une connexion persistante
+
+Avec WebSocket, le navigateur commence par demander l’ouverture d’une connexion au serveur. Une fois cette ouverture acceptée, les deux côtés disposent d’un canal pour échanger. **Persistante** signifie que la connexion peut être conservée entre plusieurs messages : on ne négocie pas une nouvelle ouverture pour chaque phrase. Elle peut néanmoins se fermer ou être interrompue. [API WebSocket — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API).
+
+Imaginez une ligne ouverte entre Alex et le serveur : lorsqu’aucun utilisateur n’écrit, il n’est pas nécessaire de demander toutes les trois secondes si une nouveauté est apparue. Quand le serveur reçoit le message de Camille, il peut utiliser la connexion d’Alex pour le lui transmettre.
+
+### Bidirectionnel, sans alternance imposée
+
+Le client peut envoyer au serveur et le serveur peut envoyer au client sur la même connexion. C’est le sens de **bidirectionnel**. Les échanges n’ont pas à suivre un rythme « une demande, une réponse » : le serveur peut transmettre plusieurs nouveautés successives, et le navigateur peut envoyer pendant qu’il reçoit. On parle aussi de *full-duplex*. [Protocole WebSocket — RFC 6455, §1](https://www.rfc-editor.org/rfc/rfc6455.html#section-1).
 
 ```text
-Client                     Serveur
-  |---- des nouveautés ? ---->|
-  |<--- aucune ---------------|
-  |         attente           |
-  |---- des nouveautés ? ---->|
-  |<--- un message -----------|
+Navigateur d’Alex                         Serveur
+        |──── demande d’ouverture ───────────>|
+        |<─── ouverture acceptée ─────────────|
+        |                                     |
+        |<─── message de Camille ─────────────|
+        |<─── autre message ──────────────────|
+        |──── réponse d’Alex ────────────────>|
+        |                                     |
+        |       La connexion reste ouverte    |
 ```
 
-**Exemple chiffré.** Avec 100 clients qui interrogent le serveur toutes les 3 secondes, on obtient environ 33 requêtes par seconde, même si la conversation est calme. Un message arrivé juste après une interrogation attendra presque 3 secondes avant la suivante, auxquelles s’ajoutent le réseau et le traitement.
+Le serveur n’ouvre pas arbitrairement une connexion entrante vers Alex : **c’est le navigateur qui établit le canal initial**. Le serveur l’utilise ensuite pour transmettre les événements utiles.
 
-Cela ne signifie pas qu’HTTP est inadapté au Web. Il convient très bien à de nombreuses opérations : charger une page, demander un profil ou consulter un historique. HTTP peut aussi utiliser des connexions persistantes : ne confondez pas une nouvelle requête avec l’ouverture systématique d’une nouvelle connexion TCP.
+### HTTP ne disparaît pas
 
-#### 4.3 Ce qu’apporte WebSocket
+Les fichiers HTML, CSS et JavaScript de notre interface restent chargés en HTTP. Ensuite, le code du navigateur établira une connexion WebSocket pour les échanges du chat. Il y a donc deux usages complémentaires dans la même application : charger l’interface et faire circuler les messages.
 
-WebSocket permet une communication **bidirectionnelle** sur une connexion maintenue ouverte : après son établissement, client et serveur peuvent chacun envoyer des messages. Le serveur peut donc transmettre un nouveau message au client sans attendre son prochain sondage. Le protocole définit une ouverture de connexion, des échanges de données et une fermeture. Dans le cas classique HTTP/1.1 étudié ensuite, l’ouverture négocie un changement de protocole ; les en-têtes seront détaillés à la séquence 2. [Référence : RFC 6455](https://www.rfc-editor.org/rfc/rfc6455).
+Dans le cas HTTP/1.1 de notre atelier, la négociation initiale demande au serveur de passer au protocole WebSocket : c’est le **handshake**. Après acceptation, les données circulent sous forme de messages WebSocket, portés par des trames, et non comme une succession de réponses HTTP. Le détail de cette ouverture sera observé en S2. [RFC 6455, §1.3 et §5](https://www.rfc-editor.org/rfc/rfc6455.html#section-1.3).
+
+## 5. Deux utilisateurs, deux connexions
+
+Une confusion fréquente consiste à imaginer un WebSocket commun à tous les navigateurs. Dans notre architecture, chaque client ouvre sa propre connexion au serveur.
 
 ```text
-Client                       Serveur
-  |==== connexion établie ======|
-  |------ message A ------------>|
-  |<----- événement B -----------|
-  |<----- événement C -----------|
-  |------ message D ------------>|
+Navigateur de Camille  <==== connexion A ====>  Serveur
+Navigateur d’Alex      <==== connexion B ====>  Serveur
+Navigateur de Sam      <==== connexion C ====>  Serveur
 ```
 
-Le terme « temps réel » désigne ici une expérience réactive. Il reste toujours un délai de transport et de traitement. Le Wi-Fi peut couper et le serveur peut redémarrer. Nous apprendrons à rendre ces situations compréhensibles dans l’interface.
+Pour livrer le message de Camille à Alex, le serveur effectue deux opérations distinctes : recevoir sur A, puis envoyer sur B. Pour le transmettre aussi à Sam, il envoie également sur C. La diffusion à plusieurs utilisateurs est donc **un comportement à programmer**, pas une conséquence automatique du protocole.
 
-| Besoin de l’application | Approche adaptée à notre projet |
+Dans notre future S4, le serveur diffusera le message à tous les clients concernés, **émetteur inclus**. Cela permettra de prendre le message traité par le serveur comme référence d’affichage. Le frontend devra éviter de l’ajouter deux fois. La première version affichera ce retour serveur ; les états provisoires arriveront en S5.
+
+Pensez aussi à ce qu’il se passe quand Alex ferme son onglet. Sa connexion ne peut plus servir à recevoir. Le serveur devra retirer cette connexion de son registre. Si Alex revient, il ouvrira une nouvelle connexion : l’historique et la récupération des messages manqués demanderaient un mécanisme supplémentaire.
+
+## 6. Ce que WebSocket apporte, et ce qu’il faut construire
+
+| Mécanisme | Qui s’en charge dans notre projet ? |
 |---|---|
-| Charger l’interface | HTTP |
-| Demander ponctuellement une ressource | Requête HTTP |
-| Échanger fréquemment dans les deux sens | Connexion WebSocket |
-| Retrouver les messages après un redémarrage | Stockage à concevoir séparément |
+| Établir une connexion et transporter des messages dans les deux sens | Protocole et implémentations WebSocket |
+| Réagir à une ouverture, un message ou une fermeture | Notre code, avec les événements de l’API native |
+| Choisir les destinataires | Notre serveur, en S4 puis S7 |
+| Réessayer après une coupure | Notre gestionnaire de reconnexion, en S5 |
+| Confirmer le traitement d’un envoi | Notre échange de confirmation, en S5 |
+| Refuser un contenu invalide ou un débit excessif | Notre serveur, en S6 |
+| Conserver un historique durable | Prolongement hors parcours obligatoire |
 
-WebSocket transporte des données ; il ne fournit pas à lui seul les règles d’un chat. C’est notre code qui définira les destinataires, la validation, les confirmations et les autorisations. Un texte affiché dans une bulle ne prouve donc ni sa livraison ni sa lecture.
+L’API du navigateur expose notamment les événements `open`, `message`, `error` et `close`. Ils permettent au code de réagir à l’évolution de la connexion et aux données reçues. Vous les utiliserez à partir de la prochaine séquence. [Référence WebSocket — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket).
 
-**Autre solution à connaître :** les Server-Sent Events permettent un flux du serveur vers le navigateur ; les envois du navigateur peuvent passer séparément par HTTP. Notre projet retient une communication bidirectionnelle. Vous n’avez pas à implémenter ni comparer ces solutions aujourd’hui.
+**Temps réel ne veut pas dire instantané.** En retirant l’attente du prochain sondage, nous améliorons la réactivité ; il reste des délais réseau et du temps de traitement. Une coupure peut aussi ne pas être détectée immédiatement. Ce sont précisément les situations étudiées en S5.
 
-#### 4.4 WebSocket et Socket.IO : deux niveaux distincts
+Il faut distinguer « j’ai déclenché l’envoi » et « le serveur l’a traité ». La méthode d’envoi place des données en attente de transmission ; elle ne renvoie pas une preuve de lecture par un utilisateur. Notre application devra produire ses propres confirmations. [Méthode `send()` — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send).
 
-**WebSocket est un protocole ; Socket.IO est une bibliothèque de communication événementielle.** Socket.IO peut s’appuyer sur WebSocket et ajoute ses propres conventions. Un client WebSocket natif ne dialogue pas directement avec un serveur Socket.IO. Les exercices de ce parcours utiliseront Socket.IO côté client et côté serveur. [Documentation Socket.IO](https://socket.io/docs/v4/).
+### Notre choix technique
 
-Retenez simplement cette distinction. Aucun client réseau n’est à écrire pendant cette séance. Les termes `socket.id`, `broadcast.emit()` et `join()` rencontrés dans le programme appartiennent à l’API Socket.IO.
+Dans le navigateur, nous utiliserons **l’API WebSocket native**, déjà disponible : aucun client Socket.IO à installer. Côté serveur, NestJS utilisera **`WsAdapter`**, qui s’appuie sur la bibliothèque `ws` et accepte les connexions natives du navigateur. « Natif » décrit ici le protocole et l’API du navigateur ; cela n’interdit pas une bibliothèque serveur. [Adaptateur `ws` de NestJS](https://docs.nestjs.com/websockets/adapter#ws-library).
 
-#### 4.5 À quoi ressemblera un message ?
+**Repère sur Socket.IO.** Cette bibliothèque ajoute ses propres conventions et fonctionnalités. Elle n’est pas interchangeable avec un client WebSocket natif. Nous ne l’utiliserons pas dans les exercices. [Documentation Socket.IO](https://socket.io/docs/v4/).
 
-Nous travaillerons avec des données structurées :
+## 7. Activité — Compléter le trajet d’un message
 
-```js
-const message = {
-  author: 'Camille',
-  content: 'Bonjour !',
-  timestamp: '2026-09-30T09:00:00.000Z'
-};
-```
+**Durée : 3 minutes, incluse dans le bloc de compréhension.** Les connexions sont déjà ouvertes. Camille écrit « Bonjour ». Complétez les cinq zones avec les propositions suivantes :
 
-Cet objet JavaScript contient un auteur, un contenu et une date textuelle. Sa représentation JSON est :
-
-```json
-{
-  "author": "Camille",
-  "content": "Bonjour !",
-  "timestamp": "2026-09-30T09:00:00.000Z"
-}
-```
-
-`JSON.stringify(message)` produit une chaîne JSON ; `JSON.parse(texte)` reconstruit une valeur JavaScript à partir d’un JSON valide. Un objet JavaScript et du texte JSON ne sont donc pas la même chose. Avec Socket.IO, les objets usuels sont sérialisés par la bibliothèque ; on n’ajoutera pas systématiquement `JSON.stringify()` à chaque émission.
-
-Cette structure est un exemple pédagogique, pas une preuve d’identité. Un client peut modifier les valeurs qu’il envoie. Le serveur devra appliquer ses propres contrôles ; l’horodatage validé sera traité à la séquence 5 et l’anti-spam à la séquence 6.
-
-### 5. Atelier — Lancer votre interface en local
-
-**Temps : 18 minutes. Travail individuel, entraide autorisée.** Vous devez obtenir l’interface « Le Salon », puis changer son titre. Ne créez pas un nouveau projet Vue : utilisez le squelette distribué.
-
-#### Étape A — Vérifier les outils · 2 minutes
-
-Ouvrez un terminal et exécutez séparément :
-
-```sh
-node --version
-npm --version
-git --version
-```
-
-Les trois commandes doivent afficher une version. Le poste de formation cible **Node.js 24 LTS**. Le projet livré exige au minimum Node.js 22.12 ; utilisez la version commune au groupe pour faciliter le dépannage. [Versions de Node.js](https://nodejs.org/en/about/previous-releases) · [Prérequis Vite](https://vite.dev/guide/).
-
-Si une commande est introuvable, signalez-le immédiatement. Fermez et rouvrez le terminal après une installation récente. Si nécessaire, rejoignez temporairement un binôme et notez le blocage ; la validation individuelle de l’installation sera reprise ensuite.
-
-#### Étape B — Cloner le dépôt · 3 minutes
-
-Le formateur fournit l’adresse réelle du dépôt. Remplacez `URL_DU_DEPOT` par cette adresse ; ce texte est un emplacement à compléter.
-
-```sh
-git clone URL_DU_DEPOT messagerie-websocket
-cd messagerie-websocket
-```
-
-Le dépôt formateur doit avoir le contenu du dossier `front-statique` à sa racine. Vous devez donc voir `package.json`, `package-lock.json`, `index.html` et `src/` immédiatement après le clonage.
-
-**Pour cloner le dépôt local livré avec ce kit**, décompressez l’archive, ouvrez un terminal dans le dossier `sequence-1` qui contient `front-statique.bundle`, puis exécutez :
-
-```sh
-git clone front-statique.bundle messagerie-websocket
-cd messagerie-websocket
-```
-
-Ce clonage fonctionne sans hébergement Git distant ; le téléchargement des dépendances à l’étape suivante exige encore un accès réseau.
-
-**Autre solution avec l’archive :** ouvrez directement un terminal dans `sequence-1/front-statique`. Cela permet l’atelier local, mais ne valide pas la compétence « cloner un dépôt ».
-
-#### Étape C — Installer et lancer · 5 minutes
-
-À la racine du front :
-
-```sh
-npm ci
-npm run dev
-```
-
-`npm ci` installe les versions décrites dans le fichier de verrouillage. `npm run dev` démarre le serveur de développement Vite. Gardez le terminal ouvert.
-
-Ouvrez **l’adresse affichée par Vite**, généralement `http://127.0.0.1:5173`. Le port peut changer si 5173 est déjà occupé. Ne lancez pas le projet en double-cliquant sur `index.html`.
-
-Le serveur Vite sert les fichiers du frontend et facilite le développement. **Ce n’est pas le futur serveur de messagerie NestJS.** Une page accessible en local ne signifie donc pas qu’un chat réseau est déjà disponible.
-
-#### Étape D — Explorer et modifier · 5 minutes
-
-| Fichier | Utilité |
-|---|---|
-| `package.json` | Dépendances et commandes du projet |
-| `package-lock.json` | Versions résolues pour une installation reproductible |
-| `index.html` | Page d’entrée du navigateur |
-| `src/main.js` | Démarrage de Vue et chargement des styles |
-| `src/App.vue` | Interface, messages fictifs et comportement local du formulaire |
-| `src/style.css` | Import de Tailwind et styles globaux |
-| `vite.config.js` | Configuration de Vue et Tailwind dans Vite |
-
-1. Ouvrez `src/App.vue` et trouvez `const projectTitle = 'Le Salon';`.
-2. Remplacez seulement `Le Salon` par `Le Salon de votre prénom` et enregistrez.
-3. Vérifiez que le titre change dans le navigateur.
-4. Repérez le tableau `messages`. Combien d’objets contient-il ?
-5. Saisissez un texte et cliquez sur « Envoyer (démo) ». Lisez le retour affiché.
-
-Vous venez de vérifier que vous modifiez le bon projet et que Vue se recharge. Le formulaire réagit localement mais ne transmet rien au serveur de chat, puisqu’il n’existe pas encore.
-
-**Observation utile.** Vite utilise lui-même une connexion WebSocket pour son rechargement à chaud. Si vous en voyez une dans l’onglet Réseau du navigateur, ce n’est pas la connexion métier de notre messagerie.
-
-#### Étape E — Faire votre preuve de fonctionnement · 3 minutes
-
-Renseignez ce relevé dans votre espace de travail ou dans le LMS :
+**affiche le message · connexion de Camille · reçoit et choisit les destinataires · connexion d’Alex · envoie le message**
 
 ```text
-Prénom :
-Version de Node.js :
-Adresse locale affichée par Vite :
-Titre personnalisé visible :
-Fichier contenant les messages fictifs :
-Pourquoi mon texte n’est-il pas reçu dans un autre navigateur ?
-Blocage éventuel et message d’erreur exact :
+Navigateur de Camille               Serveur                 Navigateur d’Alex
+[1. __________________]
+          |
+          |── [2. ________________] ──>|
+                                       | [3. __________________________]
+                                       |
+                                       |── [4. ________________] ──>|
+                                                                    | [5. _____________]
 ```
 
-Vous pouvez joindre une capture de l’interface personnalisée. Pour arrêter Vite : revenez au terminal et utilisez `Ctrl+C`. Pour le redémarrer : `npm run dev` dans le même dossier.
+Puis répondez :
 
-### 6. Dépannage rapide
+1. Alex doit-il refaire une requête HTTP pour chaque nouveau message du chat ?
+2. Combien de connexions WebSocket relient ces deux navigateurs au serveur ?
+3. Le protocole décide-t-il automatiquement de diffuser à tous les utilisateurs ?
 
-| Symptôme | Vérification et action |
-|---|---|
-| `node` ou `npm` introuvable | Vérifier l’installation de Node et rouvrir le terminal |
-| `git` introuvable | Installer Git avec l’aide du formateur ; utiliser l’archive en dépannage |
-| `Repository not found` ou accès refusé | Vérifier l’URL et les droits d’accès au dépôt |
-| `ENOENT … package.json` | Revenir dans le dossier qui contient `package.json` |
-| `npm ci` signale un verrouillage incohérent | Demander la bonne version du dépôt au formateur ; ne pas supprimer le verrouillage au hasard |
-| `ENOTFOUND`, délai dépassé ou erreur de proxy | Vérifier le réseau et le proxy de l’établissement ; transmettre l’erreur exacte |
-| Avertissement de version Node | Utiliser Node 24 LTS comme le groupe |
-| La page ne s’ouvre pas | Vérifier que Vite tourne et copier l’adresse exacte du terminal |
-| Le titre ne change pas | Enregistrer le bon `App.vue` et vérifier le dossier du terminal |
-| Le message ne part pas | Comportement normal de la séquence 1 : l’envoi est une démonstration locale |
+Conservez votre schéma et vos réponses. Le corrigé est dans le fichier `03-corriges.md` ; consultez-le après votre tentative.
 
-Ne cherchez pas à résoudre une panne d’installation en modifiant au hasard les versions des dépendances. Une erreur est une information : relevez la commande lancée, le dossier courant et les premières lignes significatives du message.
+## 8. Lancer le projet
 
-### 7. Vérifier vos acquis
+Suivez `04-installation-et-checklist.md`. En quinze minutes, vous allez récupérer le projet fourni, installer les dépendances, démarrer le frontend Vue et le backend NestJS, puis vérifier leurs adresses.
 
-Pendant les cinq minutes de vérification, montrez votre interface à un binôme, puis échangez les rôles. Chacun doit expliquer :
+**Attention à ce que prouve cette étape :** afficher l’interface et obtenir la réponse HTTP de diagnostic du backend prouve que les deux services démarrent. Cela ne prouve pas encore que le navigateur est connecté au chat. Le branchement du client natif appartient à S2 ; les premiers messages à S3.
 
-1. Le fichier qu’il a modifié et le résultat visible.
-2. Le rôle du client et celui du futur serveur.
-3. L’intérêt d’une connexion persistante pour recevoir de nouveaux messages.
-4. La raison pour laquelle les messages actuels sont fictifs.
+Les trois messages affichés dans l’interface sont des données de démonstration. Le formulaire ne les transmet pas. Cette limite est indiquée à l’écran.
 
-**Bilan de sortie — 2 minutes.** Complétez ces trois phrases :
+## À retenir avant S2
 
-- « Pour transmettre un message de Camille à Alex, le serveur doit… »
-- « Mon interface fonctionne en local, mais il manque encore… »
-- « Avant la prochaine séance, je dois revoir… / je suis prêt à… »
+Le navigateur établit une connexion WebSocket avec le serveur. Une fois ouverte, cette connexion permet à chacun d’envoyer sans attendre une nouvelle requête pour chaque message. Dans une messagerie, le serveur reçoit sur la connexion de l’émetteur, puis transmet sur celles des destinataires. Notre code définira la diffusion, les confirmations, la reconnexion et les salons.
 
-**Vous êtes prêt pour la séquence 2** si le front démarre et si vous distinguez affichage local et transmission réseau. Si une de ces conditions manque, identifiez le blocage avec le formateur et conservez les éléments utiles au dépannage.
+**Validation de la séquence :** schéma complété et expliqué, frontend visible, backend répondant sur `/health`.
 
-### 8. Fiche mémo
-
-- **Client :** affiche, collecte les saisies et réagit aux données reçues.
-- **Serveur :** reçoit, contrôle et distribue selon les règles de l’application.
-- **HTTP :** requêtes et réponses, utiles notamment au chargement et aux demandes ponctuelles.
-- **Polling :** demandes répétées à intervalle régulier.
-- **WebSocket :** connexion permettant des échanges dans les deux sens après ouverture.
-- **Socket.IO :** bibliothèque retenue dans les exercices ; ses API diffèrent du WebSocket natif.
-- **JSON :** format textuel de données structurées.
-- **Localhost / 127.0.0.1 :** votre propre ordinateur ; cette adresse ne désigne pas le poste du voisin.
-- **Port :** numéro identifiant un point d’écoute sur une machine.
-- **Dépendance :** paquet logiciel utilisé par le projet.
-
-Pour approfondir après la séance : [guide Vue](https://vuejs.org/guide/quick-start.html), [guide Vite](https://vite.dev/guide/), [intégration Tailwind avec Vite](https://tailwindcss.com/docs/installation/using-vite), [API WebSocket sur MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API). Ces lectures sont facultatives ; elles ne s’ajoutent pas au travail obligatoire de l’heure.
+Si vous souhaitez approfondir dès maintenant la différence entre connexion, message et trame, consultez `07-approfondissement-websocket.md`. Ce complément ne s’ajoute pas au travail obligatoire des 45 minutes.

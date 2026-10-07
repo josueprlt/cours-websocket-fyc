@@ -1,8 +1,6 @@
 # Séquence 2 — Ouvrir et gérer une connexion WebSocket
 
-**Durée : environ 1 h 30 · API native du navigateur · Vue et NestJS/WsAdapter**
-
-En S1, vous avez démarré les deux services et expliqué le trajet d’un message. Aujourd’hui, vous allez brancher le navigateur au point `/chat`, afficher son état et fermer la connexion à la demande de l’utilisateur. Les raisons du choix de WebSocket sont acquises ; nous passons à son cycle de vie.
+Durant la séquence 1, vous avez démarré les deux services et expliqué le trajet d’un message. Aujourd’hui, vous allez brancher le navigateur au point `/chat`, afficher son état et fermer la connexion à la demande de l’utilisateur. Les raisons du choix de WebSocket sont acquises ; nous passons à son cycle de vie.
 
 ## Résultat attendu
 
@@ -168,6 +166,6 @@ Une fois l’objet fermé, une nouvelle tentative utilise un nouvel objet. Ici, 
 
 ## 7. Votre travail
 
-Ouvrez `02-tp-guide.md`. Vous compléterez six emplacements dans `frontend/src/useConnection.js`. L’interface, le journal, le câblage des écouteurs et le nettoyage au démontage sont fournis. Vous ne modifiez pas le serveur.
+Ouvrez `tp-guide.md`. Vous compléterez six emplacements dans `frontend/src/useConnection.js`. L’interface, le journal, le câblage des écouteurs et le nettoyage au démontage sont fournis. Vous ne modifiez pas le serveur.
 
 Vous aurez terminé lorsque vous pourrez ouvrir, expliquer l’état affiché, fermer volontairement et diagnostiquer les cas demandés. L’étape suivante utilisera ce canal pour les messages ; elle ne fait pas partie du travail de cette séance.

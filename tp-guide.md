@@ -4,7 +4,7 @@ Vous utilisez le projet apprenant livré. Consultez le corrigé après vos essai
 
 ## Préparer le poste — inclus dans les 10 minutes de repérage
 
-Le poste Node 24 et les outils ont été préparés en S1. Arrêtez les anciens services S1 pour libérer 3000 et 5173. Ouvrez un terminal dans `projet-apprenant`, puis :
+Le poste Node 24 et les outils ont été préparés en S1. Arrêtez les anciens services S1 pour libérer 3000 et 5173. Ouvrez un terminal dans `projet`, puis :
 
 ```sh
 npm ci
@@ -95,7 +95,7 @@ Expliquez pourquoi le texte « Connecté » se trouve dans `onOpen()` plutôt qu
 
 ### Lire la fiche et prévoir le comportement · environ 4 min
 
-Ouvrez `03-fiche-reference.md`. Anticipez les deux observations qui suivront un clic sur Déconnecter : demande de fermeture, puis événement de fermeture.
+Ouvrez `fiche-reference.md`. Anticipez les deux observations qui suivront un clic sur Déconnecter : demande de fermeture, puis événement de fermeture.
 
 ### TODO 5 · Traiter `close` · environ 7 min
 
@@ -125,6 +125,6 @@ Connecter → `open` → Déconnecter → `close`. La transition 2 peut être vi
 
 ## Partie C — Tester et corriger · 20 minutes
 
-Réalisez les cinq scénarios de `04-tests-et-validation.md` puis comparez votre solution au corrigé. Vous pouvez redémarrer manuellement après un échec ; n’ajoutez pas de reprise automatique.
+Réalisez les cinq scénarios de `tests-et-validation.md` puis comparez votre solution au corrigé. Vous pouvez redémarrer manuellement après un échec ; n’ajoutez pas de reprise automatique.
 
 **À rendre :** le fichier complété, la matrice renseignée, votre relevé réseau et les réponses de bilan. Gardez les deux services pour les essais, puis arrêtez-les avec `Ctrl+C`.

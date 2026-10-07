@@ -55,6 +55,7 @@ Les flèches indiquent le trajet de ce message précis. Les connexions A et B pe
 1. Non. Après ouverture du canal, le serveur peut envoyer les nouvelles données sans attendre une nouvelle requête HTTP d’Alex pour chaque message.
 2. Deux : une par navigateur dans ce scénario.
 3. Non. Le code serveur définit les destinataires ; S4 construira la diffusion et S7 la limitera au salon actif.
+4. Non, le handshake initial vient toujours du client
 
 **Validation :** les deux connexions sont identifiées, le serveur est sur le trajet, l’affichage est attribué au navigateur destinataire et l’apprenant explique l’absence de sondage périodique. Une inversion « le serveur modifie directement le DOM d’Alex » doit être corrigée.
 

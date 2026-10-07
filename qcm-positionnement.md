@@ -99,4 +99,4 @@ Dans notre application, qui met à jour les bulles affichées dans l’interface
 |---|---|---|---|---|---|---|---|---|
 | Réponse | | | | | | | | |
 
-Ouvrez ensuite la partie QCM de `03-corriges.md`. Notez une priorité de révision si nécessaire. Il n’y a pas de manipulation JSON à apprendre pendant cette séquence ; son utilisation dans les échanges sera travaillée en S3.
+Ouvrez ensuite la partie QCM de `corriges.md`. Notez une priorité de révision si nécessaire. Il n’y a pas de manipulation JSON à apprendre pendant cette séquence ; son utilisation dans les échanges sera travaillée en S3.

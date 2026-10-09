@@ -44,7 +44,7 @@ Supposons que le serveur réponde à Alex : « Aucun nouveau message ». Une sec
 
 Pour éviter à l'utilisateur de cliquer sans cesse pour actualiser, on peut automatiser ces requêtes HTTP, par exemple toutes les trois secondes. C’est ce que l'on appelle le **polling périodique**.
 
-![Schéma représentatif du polling](./img/the-http-polling.webp)
+![Schéma représentatif du polling](https://www.researchgate.net/profile/Carlos-Jaimez-Gonzalez/publication/261051143/figure/fig5/AS:733528580960258@1551898250563/The-HTTP-Polling-technique.jpg)
 
 Dans cet exemple, le délai ajouté par l’attente du prochain sondage est de deux secondes. Ce décalage dépend du moment exact où le message arrive : il peut varier de presque zéro à presque trois secondes, sans compter le temps de transport et de traitement.
 
@@ -66,7 +66,7 @@ Imaginez une ligne ouverte entre Alex et le serveur : lorsqu’aucun utilisateur
 
 Le client peut envoyer des données au serveur, et le serveur peut en envoyer au client sur cette même connexion. C’est ce que signifie **bidirectionnel**. Les échanges n’ont plus à suivre le rythme strict « une demande = une réponse » : le serveur peut transmettre plusieurs nouveautés successives, et le navigateur peut envoyer des messages pendant qu’il en reçoit. On parle de communication *full-duplex*. [Protocole WebSocket — RFC 6455, §1](https://www.rfc-editor.org/rfc/rfc6455.html#section-1).
 
-![Schéma Websocket](./img/websockets.webp)
+![Schéma Websocket](https://upsun.com/static/03c152d5b118130c146e5d3f70e74886/9917f/websocket_client_sequence_2c1278151b.webp)
 
 Attention : le serveur n’ouvre pas arbitrairement une connexion entrante vers Alex. **C’est toujours le navigateur qui établit le canal initial**. Le serveur l’utilise ensuite pour lui transmettre les événements.
 
@@ -80,7 +80,7 @@ La négociation initiale (**le handshake**) s'effectue d'ailleurs en HTTP. C’e
 
 Une confusion fréquente consiste à imaginer un canal WebSocket commun à tous les navigateurs. En réalité, **chaque client ouvre sa propre connexion** dédiée avec le serveur.
 
-![Schéma Canaux Websocket](./img/websocket-canal.png)
+![Schéma Canaux Websocket](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOScgsY6SBk8FQ8S9M_lWNxM_C-ARyLVtRWiv86WoUrQ&s=10)
 
 Pour livrer le message de Camille à Alex, le serveur effectue deux opérations distinctes : il le reçoit sur la connexion A, puis l'envoie sur la connexion B. S'il veut le transmettre à Sam, il l'envoie également sur la connexion C.
 
@@ -118,7 +118,27 @@ Dans ce scénario, les connexions sont déjà ouvertes. Camille écrit « Bonjou
 
 **affiche le message · connexion de Camille · reçoit et choisit les destinataires · connexion d’Alex · envoie le message**
 
-![Exercice séquence 1](./img/exo-seq-1.png)
+```mermaid
+sequenceDiagram
+    participant C as Navigateur de Camille
+    participant S as Serveur
+    participant A as Navigateur d'Alex
+
+    %% 1er cadre : Centré sur Camille
+    Note over C: 
+    
+    %% 2ème cadre : Entre Camille et le Serveur
+    C->>S: [ -------------- ]
+    
+    %% 3ème cadre : Centré sur le Serveur
+    Note over S: 
+    
+    %% 4ème cadre : Entre le Serveur et Alex
+    S->>A: [ -------------- ]
+    
+    %% 5ème cadre : Centré sur Alex
+    Note over A: 
+```
 
 *Note : Une vidéo d'installation du projet est disponible pour configurer le projet correctement.*
 

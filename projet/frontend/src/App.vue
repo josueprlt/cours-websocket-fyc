@@ -6,9 +6,9 @@ const projectTitle = 'Le Salon';
 const draft = ref('');
 const notice = ref('');
 const messages = [
-  { id: 1, author: 'Camille', content: 'Bienvenue dans notre futur espace de discussion !', time: '09:41' },
-  { id: 2, author: 'Alex', content: 'Pour le moment, ces messages sont des données de démonstration.', time: '09:42' },
-  { id: 3, author: 'Camille', content: 'Notre défi : faire circuler de vrais messages entre deux navigateurs.', time: '09:43' },
+  { id: 1, author: 'Josué', content: 'Bienvenue dans notre futur espace de discussion !', time: '09:41' },
+  { id: 2, author: 'Bernard', content: 'Pour le moment, ces messages sont des données de démonstration.', time: '09:42' },
+  { id: 3, author: 'Josué', content: 'Notre défi : faire circuler de vrais messages entre deux navigateurs.', time: '09:43' },
 ];
 
 function previewOnly() {

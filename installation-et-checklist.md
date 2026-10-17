@@ -1,10 +1,8 @@
 # Atelier — Démarrer le frontend et le backend
 
-**Durée : 15 minutes · Aucun code réseau à écrire en S1**
+Préparez avant la séance Node.js 24.x, npm, Git, un éditeur et un navigateur. Un accès à GitHub est nécessaire pour récupérer le projet, puis au registre npm pour les dépendances. Les commandes sont à lancer dans un terminal, une ligne après l’autre.
 
-Préparez avant la séance Node.js 24.x, npm, Git, un éditeur et un navigateur. Un accès au registre npm est nécessaire pour les dépendances. Les commandes sont à lancer dans un terminal, une ligne après l’autre.
-
-## 1. Vérifier les outils — 2 minutes
+## 1. Vérifier les outils
 
 ```sh
 node --version
@@ -14,20 +12,28 @@ git --version
 
 La version de Node doit commencer par `v24.`. Notez les versions si un dépannage est nécessaire. Le fichier `.nvmrc` indique également 24 pour les utilisateurs d’un gestionnaire de versions ; installer ce gestionnaire n’est pas demandé.
 
-## 2. Récupérer le projet — 2 minutes
+## 2. Récupérer le projet
 
-Après décompression du kit, placez le terminal dans le dossier `sequence-1-v2`, qui contient `messagerie-native.bundle` :
+Le projet est disponible dans le [dépôt GitHub public du cours, sur la branche `sequence-1`](https://github.com/josueprlt/cours-websocket-fyc/tree/sequence-1). Ouvrez un terminal dans le dossier où vous souhaitez enregistrer le cours, puis clonez cette branche :
 
 ```sh
-git clone messagerie-native.bundle messagerie-websocket
-cd messagerie-websocket
+git clone --branch sequence-1 https://github.com/josueprlt/cours-websocket-fyc.git
+cd cours-websocket-fyc/projet
 ```
 
-Ce fichier est un dépôt Git local complet. Si votre formateur fournit un dépôt distant, utilisez son URL à la place de `messagerie-native.bundle`.
+Le dépôt étant public, aucun compte GitHub n’est nécessaire pour le cloner avec cette URL HTTPS.
 
-Vous devez voir `package.json`, `package-lock.json`, `frontend/` et `backend/`. Vous pouvez aussi travailler directement dans le dossier `projet/` livré : cela permet le démarrage, mais ne valide pas le clonage.
+Vous devez maintenant voir `package.json`, `package-lock.json`, `frontend/` et `backend/`. Dans la suite, « racine du projet » désigne ce dossier `cours-websocket-fyc/projet/`, dans lequel toutes les commandes npm doivent être exécutées.
 
-## 3. Installer — 4 minutes
+Vérifiez la branche active :
+
+```sh
+git branch --show-current
+```
+
+Le résultat attendu est `sequence-1`.
+
+## 3. Installer
 
 Depuis la racine du projet :
 
@@ -37,7 +43,7 @@ npm ci
 
 Cette commande installe les dépendances des deux dossiers à partir du verrouillage fourni. Une seule installation suffit. Le premier téléchargement peut dépasser le temps prévu selon votre réseau : signalez-le plutôt que de changer les versions.
 
-## 4. Lancer les deux services — 4 minutes
+## 4. Lancer les deux services
 
 **Terminal A, à la racine du projet :**
 
@@ -62,7 +68,7 @@ npm run dev:front
 
 Ouvrez `http://127.0.0.1:5173`. La messagerie « Le Salon » doit apparaître. Gardez les deux terminaux ouverts.
 
-## 5. Vérifier et remplir la checklist — 3 minutes
+## 5. Vérifier et remplir la checklist
 
 Dans un autre onglet du navigateur, ouvrez `http://127.0.0.1:3000/health`. Vous devez lire :
 
@@ -79,13 +85,11 @@ Backend prêt — séquence 1. Point WebSocket : /chat
 Le frontend affiche des messages fictifs. Le bouton « Envoyer (démo) » affiche une explication locale. Le backend est prêt, mais le frontend n’a pas encore son code de connexion au chat.
 
 - [ ] J’ai relevé ma version Node 24.x.
-- [ ] J’ai récupéré le bon projet et installé ses dépendances.
+- [ ] J’ai cloné le dépôt GitHub sur la branche `sequence-1` et installé les dépendances depuis `projet/`.
 - [ ] Le frontend s’affiche sur le port 5173.
 - [ ] Le backend répond sur `/health`, port 3000.
 - [ ] Je distingue « backend démarré » et « navigateur connecté au chat ».
 - [ ] J’ai complété le schéma du cours.
-
-**Preuve à déposer :** votre schéma et une capture ou un relevé montrant les deux vérifications. En cas de blocage, fournir la commande, le système utilisé et le message d’erreur exact.
 
 ## Repères dans le projet fourni
 
@@ -104,10 +108,10 @@ Vite possède sa propre connexion WebSocket pour recharger l’interface en dév
 | Symptôme | Action |
 |---|---|
 | Une commande outil est introuvable | Vérifier l’installation, rouvrir le terminal, demander une aide technique |
-| `ENOENT … package.json` | Ouvrir le terminal à la racine du projet cloné |
+| `ENOENT … package.json` | Ouvrir le terminal dans `cours-websocket-fyc/projet/`, où se trouve `package.json` |
 | Node incompatible | Basculer sur Node 24.x avant de réinstaller |
 | `npm ci` échoue sur le réseau | Vérifier accès npm, connexion et proxy de l’établissement |
-| `npm ci` signale un verrouillage incohérent | Récupérer le kit complet ; conserver le verrouillage fourni |
+| `npm ci` signale un verrouillage incohérent | Vérifier la branche `sequence-1` et utiliser les fichiers `package.json` et `package-lock.json` fournis ensemble dans `projet/` |
 | `EADDRINUSE` ou port 5173 occupé | Arrêter un précédent lancement de ce projet avec `Ctrl+C` ; demander de l’aide si le port appartient à un autre logiciel |
 | Le front fonctionne mais `/health` est inaccessible | Examiner le terminal backend et attendre la fin de sa compilation |
 | `/health` répond mais le front ne s’ouvre pas | Examiner le terminal frontend et vérifier l’URL 5173 |

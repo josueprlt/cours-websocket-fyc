@@ -1,130 +1,113 @@
-# TP guidé — Brancher et piloter la connexion
+# TP guidé — Un aller-retour complet
 
-Vous utilisez le projet apprenant livré. Consultez le corrigé après vos essais. Les six TODO se trouvent dans **`frontend/src/useConnection.js`** ; le backend et l’interface sont fournis.
+Travaillez dans `projet`. La connexion de S2, l’interface, le contrôle des données et le composant d’affichage sont fournis. Sept TODO se répartissent entre `frontend/src/useChat.js` et `backend/src/chat.gateway.ts`. Consultez le corrigé après vos essais.
 
-## Préparer le poste — inclus dans les 10 minutes de repérage
+## Préparer le poste
 
-Le poste Node 24 et les outils ont été préparés en S1. Arrêtez les anciens services S1 pour libérer 3000 et 5173. Ouvrez un terminal dans `projet`, puis :
+Utilisez Node 24.x comme en S2. Arrêtez les anciens services pour libérer 3000 et 5173. Depuis `projet` :
 
 ```sh
 npm ci
 npm run dev:back
 ```
 
-Dans un second terminal, dans le même dossier racine :
+Dans un deuxième terminal, depuis `projet` :
 
 ```sh
 npm run dev:front
 ```
 
-Ouvrez `http://127.0.0.1:5173`. Le badge indique « Non connecté ». Au départ, Connecter affiche une consigne : le premier TODO contient un `return` temporaire qu’il faudra remplacer.
+Ouvrez `http://127.0.0.1:5173` : la connexion démarre automatiquement. Avant tout exercice, le badge doit afficher Connecté. Le squelette compile mais n’envoie pas encore de message. Le bouton Envoyer affiche une consigne TODO.
 
-**Si vous continuez votre dépôt S1 :** conservez une copie de votre travail, remplacez `frontend/src/App.vue` par l’écran S2 fourni et ajoutez `frontend/src/useConnection.js` depuis le projet apprenant. Vous pouvez aussi reprendre le `frontend/index.html` S2 pour le titre de page. Aucune dépendance ou configuration backend ne change. Les données fictives et le formulaire de S1 seront repris en S3 ; S2 utilise un écran ciblé sur la connexion.
+**Si vous poursuivez votre projet S2 :** sauvegardez votre travail, reprenez les fichiers S3 `App.vue`, `useConnection.js`, `useChat.js`, `protocol.js`, `MessageList.vue`, `responseFixtures.js` dans `frontend/src`, puis `chat.gateway.ts` dans `backend/src`. Reprenez aussi `frontend/index.html` pour le titre. Les dépendances et l’adaptateur ne changent pas. `useConnection` conserve le cycle de vie S2 et fournit désormais un callback de réception et `getSocket()`.
 
-## Repérage — 10 minutes avec la vidéo
+Le chat affiche les réponses en bulles, avec leur heure. L’identifiant serveur reste consultable au survol de « Reçu par le serveur » ou dans la trame réseau. L’onglet Atelier regroupe les contrôles de connexion, les injections et le journal repliable. Changer d’onglet conserve la connexion, le brouillon et les messages.
 
-| Élément fourni | Rôle |
-|---|---|
-| `url` | Adresse saisie dans le champ |
-| `socket` | Objet technique conservé entre les clics |
-| `readyState` | Copie réactive de l’état pour l’interface |
-| `information` | Retour textuel destiné à l’utilisateur |
-| `record()` | Ajout d’une observation au journal |
-| `canConnect`, `canClose` | Activation des boutons selon l’état |
-| `onOpen`, `onError`, `onClose` | Gestionnaires à compléter |
+Le backend ne se relance pas automatiquement : après chaque modification TypeScript, arrêtez-le puis relancez `npm run dev:back`, et cliquez sur Réessayer dans le chat (ou Connecter dans Atelier). Vite actualise le frontend ; reconnectez-vous si le rechargement du module a fermé le canal.
 
-Le test au début de `connect()` empêche de créer une seconde connexion tant que la précédente n’est pas fermée. Les écouteurs de l’ancienne connexion sont retirés avant une nouvelle tentative. Le code de nettoyage est fourni : concentrez-vous sur les six TODO.
+## A — Envoyer depuis le formulaire · 20 min
 
-## Partie A — Connecter le navigateur · 25 minutes
+### Repérer le trajet · 4 min
 
-### TODO 1 · Instancier le client · environ 5 min
+Dans `App.vue`, trouvez `@submit.prevent="sendMessage"`, le `v-model="draft"` et la liste. Dans `useChat.js`, identifiez `draft`, `messages`, `notice` et `connection.getSocket()`. La fonction de réception est déjà branchée par `useConnection` ; ne modifiez pas ses écouteurs.
 
-Dans le `try`, remplacez **les deux lignes temporaires** :
+### TODO 1 · Contrôler l’état · 5 min
+
+Dans `sendMessage`, remplacez `false` par la condition qui refuse l’envoi si l’objet n’existe pas **ou** si son état n’est pas `WebSocket.OPEN`. Le message et le `return` sont fournis. Le contrôle de saisie qui suit est également fourni.
+
+**Vérification :** dans Atelier, cliquez sur Déconnecter, puis revenez dans général : le bouton Envoyer est désactivé. Pour vérifier aussi la fonction, retirez temporairement `:disabled="!canClose"` du seul bouton Envoyer, soumettez un brouillon et vérifiez le diagnostic sans perte du texte. Rétablissez ensuite cet attribut, puis cliquez sur Réessayer.
+
+### TODO 2 · Sérialiser et envoyer · 8 min
+
+Remplacez la consigne temporaire dans le `try` par :
+
+1. une enveloppe `chat:send`, avec `data.content` ;
+2. sa sérialisation et son envoi ;
+3. le vidage de `draft.value` et une information « Envoi demandé ; attente de la réponse ».
+
+Extrait de référence à adapter :
 
 ```js
-information.value = 'TODO 1 : instancier WebSocket dans useConnection.js.';
-return;
+const request = { event: 'chat:send', data: { content } };
+socket.send(JSON.stringify(request));
 ```
 
-par la construction native affectée à `current`, en utilisant `url.value` comme adresse. Ne créez pas un client Socket.IO. Ne mettez pas `await` devant le constructeur.
+N’ajoutez rien à `messages`. Ne faites pas `await socket.send(...)`.
 
-**Résultat intermédiaire :** le navigateur peut tenter une ouverture, même si votre indicateur n’est pas encore synchronisé. Les autres TODO restent nécessaires.
+### Vérifier l’étape · 3 min
 
-### TODO 2 · Reporter l’état initial · environ 4 min
+Dans Réseau → WebSocket → `:3000/chat` → Messages (ou Frames), envoyez « Bonjour ». Une trame sortante doit contenir le JSON. À ce stade, le backend du squelette ne renvoie rien pour un texte valide. C’est normal jusqu’aux TODO 3–4. Ne confondez pas cette connexion avec celle de Vite.
 
-Après `socket = current`, affectez l’état courant du nouvel objet à `readyState.value`.
+## B — Traiter sur le serveur · 20 min
 
-**Indice :** le nom de la propriété est le même sur l’objet natif, mais la donnée Vue utilise `.value`.
+### Capsule de live coding · 5 min
 
-**Résultat attendu :** une ligne `construction` avec l’état 0 apparaît. Cette ligne ne prouve pas encore l’ouverture.
+Regardez la capsule 2 ou lisez sa transcription dans `videos.md`. Repérez le décorateur, `data`, le contrôle fourni et la valeur retournée.
 
-### TODO 3 · Traiter l’ouverture · environ 6 min
+### TODO 3 · Construire le message · 6 min
 
-Dans `onOpen()` :
+Dans `handleMessage`, après le contrôle de contenu, créez `message` avec :
 
-1. Recopiez l’état courant de `current` dans `readyState.value`.
-2. Affectez à `information.value` un texte signalant l’ouverture.
-3. Conservez l’appel `record('open')` fourni.
+- `id` : appel à `randomUUID()`, déjà importé ;
+- `content` : texte contrôlé et normalisé, déjà disponible ;
+- `createdAt` : date courante sérialisée avec `toISOString()`.
 
-**Résultat attendu :** le badge indique « Connecté », l’état observé vaut 1 et le journal contient `open`. Le bouton Connecter devient indisponible et Déconnecter disponible. Il ne fermera réellement la connexion qu’après TODO 6.
+Ne reprenez pas d’identifiant ou de date envoyés par le navigateur. N’écrivez pas une date fixe copiée du cours.
 
-### TODO 4 · Traiter une erreur · environ 5 min
+### TODO 4 · Répondre à l’émetteur · 5 min
 
-Dans `onError()`, renseignez un texte qui invite à vérifier l’adresse et le serveur. Ne prétendez pas connaître la cause exacte et n’ajoutez pas une valeur numérique inventée pour `ERROR`.
+Remplacez le `return` temporaire par l’enveloppe `chat:message`, dont `data` contient `message`. Le retour sera envoyé par `WsAdapter` au client demandeur. Ne sérialisez pas manuellement ce retour et n’ajoutez pas de diffusion.
 
-Le gestionnaire `close` sera terminé dans la partie B. Tant qu’il manque, un échec peut laisser un badge incomplet : c’est une étape de réalisation, pas le comportement final attendu.
+### Vérifier l’étape · 4 min
 
-### Vérification réseau ciblée · environ 3 min
+Redémarrez le backend, reconnectez-vous et envoyez « Bonjour ». Dans le panneau réseau, relevez la demande puis la réponse avec ses trois champs. La liste peut encore être vide : les TODO de réception ne sont pas terminés.
 
-Après sauvegarde, si nécessaire rechargez la page pour repartir sans tentative active. Ouvrez Réseau dans les outils du navigateur, puis cliquez sur Connecter. Sélectionnez la connexion vers `127.0.0.1:3000/chat`.
+## C — Recevoir et afficher · 20 min
 
-Relevez :
+### Lire la fiche de référence · 4 min
 
-```text
-URL de la connexion métier :
-Statut de l’ouverture HTTP/1.1 :
-En-tête signalant le protocole demandé :
-Événement ajouté dans le journal :
-```
+Distinguez événement natif, enveloppe applicative, décodage et contrôle de forme.
 
-### Point d’étape · environ 2 min
+### TODO 5 · Décoder dans le `try` · 5 min
 
-Expliquez pourquoi le texte « Connecté » se trouve dans `onOpen()` plutôt que juste après le constructeur. Si le navigateur ne se connecte pas, vérifiez `/health`, l’adresse 3000/chat et le terminal backend.
+Dans `receiveMessage(event)`, remplacez `const response = undefined` : refusez une donnée dont le type n’est pas `string`, puis décodez `event.data` avec `JSON.parse`. Gardez le traitement fourni de `chat:error`.
 
-## Partie B — État final et fermeture · 20 minutes
+Indice : pour faire passer une donnée non conforme dans le `catch`, utilisez `throw new Error('Texte attendu')`.
 
-### Lire la fiche et prévoir le comportement · environ 4 min
+### TODO 6 · Contrôler et ajouter · 5 min
 
-Ouvrez `fiche-reference.md`. Anticipez les deux observations qui suivront un clic sur Déconnecter : demande de fermeture, puis événement de fermeture.
+Appelez `isChatMessage(response)`. Si le résultat est faux, levez une erreur. Sinon, ajoutez `response.data` dans `messages.value`, puis annoncez la réception. Le composant fourni se met à jour grâce à la liste réactive. Aucune manipulation directe du DOM n’est nécessaire.
 
-### TODO 5 · Traiter `close` · environ 7 min
+### TODO 7 · Protéger la suite · 3 min
 
-Complétez `onClose(event)` pour :
+Dans le `catch`, renseignez `notice.value` pour indiquer que la réponse invalide est ignorée. Conservez la liste existante. Ne relancez pas l’exception et ne fermez pas la connexion.
 
-1. Recopier l’état courant du socket dans `readyState.value`.
-2. Afficher une information de fermeture, éventuellement différente selon `event.wasClean`.
-3. Appeler `record('close', détail)` avec `event.code`, `event.reason` et `event.wasClean` dans le détail.
+### Vérifier · 3 min
 
-Le journal doit conserver un motif vide comme une absence d’information, pas le transformer en « serveur arrêté ». À la fin, l’état vaut 3 et une nouvelle ouverture manuelle est possible.
+Envoyez un texte et observez son apparition. Ouvrez l’onglet Atelier, cliquez « JSON cassé » dans « Simuler une réponse reçue », puis revenez dans général et envoyez un deuxième texte réel. L’erreur doit être visible et la deuxième réponse doit s’ajouter normalement.
 
-**Indice progressif :** commencez par enregistrer le code ; ajoutez ensuite la raison et `wasClean` pour aider le diagnostic. Aucun décodage JSON n’est nécessaire.
+Ces boutons appellent localement le même gestionnaire avec des données brutes. Ils testent le décodage, mais ne constituent pas la preuve d’un aller-retour réseau.
 
-### TODO 6 · Fermer volontairement · environ 6 min
+## D — Tester et corriger · 15 min
 
-Dans `disconnect()` :
-
-1. Demandez une fermeture normale avec le code 1000 et une raison courte.
-2. Copiez aussitôt l’état courant de `socket` dans `readyState.value`.
-3. Conservez le message et la ligne de journal fournis.
-
-N’affectez pas directement `CLOSED` pour faire disparaître le badge : attendez l’événement qui confirme la fermeture. N’utilisez aucun temporisateur.
-
-### Vérifier le parcours nominal · environ 3 min
-
-Connecter → `open` → Déconnecter → `close`. La transition 2 peut être visuellement très brève : le journal en garde la trace. Attendez ensuite quelques secondes ; aucune reconnexion ne doit se produire sans clic.
-
-## Partie C — Tester et corriger · 20 minutes
-
-Réalisez les cinq scénarios de `tests-et-validation.md` puis comparez votre solution au corrigé. Vous pouvez redémarrer manuellement après un échec ; n’ajoutez pas de reprise automatique.
-
-**À rendre :** le fichier complété, la matrice renseignée, votre relevé réseau et les réponses de bilan. Gardez les deux services pour les essais, puis arrêtez-les avec `Ctrl+C`.
+Suivez `tests-et-validation.md` : 9 min de recette, 4 min de comparaison, 2 min de bilan. À rendre : les deux fichiers complétés, la matrice et une preuve de demande/réponse réseau accompagnée de l’affichage. Terminez en arrêtant les services avec Ctrl+C.

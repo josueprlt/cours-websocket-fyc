@@ -1,12 +1,17 @@
-# Séquence 2 — Projet corrigé
+# Séquence 3 — Projet corrigé
 
-Node 24.x. Depuis la racine : `npm ci`, puis `npm run dev:back` et `npm run dev:front` dans deux terminaux.
+La connexion démarre automatiquement au montage de l’interface. Le chat est affiché par défaut ; l’onglet **Atelier** rassemble les contrôles de connexion, le journal et les simulations. Après un échec ou une fermeture, utilisez **Réessayer** dans le chat ou **Connecter** dans Atelier. La reprise automatique après coupure reste pour S5.
 
-Frontend : http://127.0.0.1:5173 — backend : http://127.0.0.1:3000/health.
-Point natif : ws://127.0.0.1:3000/chat.
+Prérequis : Node 24.x. Depuis ce dossier, lancer `npm ci`, puis `npm run dev:back` et `npm run dev:front` dans deux terminaux.
 
-Le backend est celui de S1. Le travail S2 porte sur les six TODO de `frontend/src/useConnection.js`. L’interface de connexion et son journal sont fournis. Le formulaire de messages reviendra en S3 ; le présent écran isole l’exercice de connexion.
+- Interface : http://127.0.0.1:5173
+- Diagnostic HTTP : http://127.0.0.1:3000/health
+- Connexion WebSocket : ws://127.0.0.1:3000/chat
 
-`npm run build` compile les deux workspaces. Arrêter les services avec Ctrl+C. Ne pas lancer en même temps ce projet et celui de S1 : ils utilisent les mêmes ports.
+Le cycle de vie S2 est fourni. `useConnection.js` reçoit un callback de réception et expose le socket courant via `getSocket()`. Le formulaire et `MessageList.vue` sont prêts ; les réponses invalides de `responseFixtures.js` peuvent être injectées localement avec les boutons Atelier.
 
-Solution complète de S2, sans envoi de message ni reconnexion automatique.
+Solution complète des sept TODO. `npm test` compile le backend puis vérifie les échanges réels sur un port éphémère et les gestionnaires frontend ; aucun serveur manuel nécessaire.
+
+Suivre le [TP](../tp-guide.md), le [cours](../cours.md) et la [recette](../tests-et-validation.md). Le contrat utilise `{ event, data }` ; le serveur répond uniquement à l’émetteur. La liste reste en mémoire dans cet onglet.
+
+`npm run build` compile les deux workspaces. Après modification du backend, arrêter puis relancer `npm run dev:back` et reconnecter le navigateur. Les deux projets partagent les ports : ne pas les lancer simultanément. Arrêter les services avec Ctrl+C.

@@ -1,9 +1,9 @@
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-export function useConnection() {
+export function useConnection(onMessage = () => {}) {
   const url = ref('ws://127.0.0.1:3000/chat');
   const readyState = ref(null); // null = aucune tentative ; hors états de WebSocket.
-  const information = ref('Ouvrez une connexion avec le bouton Connecter.');
+  const information = ref('Connexion au serveur au chargement…');
   const journal = ref([]);
   let socket = null;
   let removeListeners = () => {};
@@ -24,9 +24,7 @@ export function useConnection() {
     information.value = '';
     let current;
     try {
-      // TODO 1 — Créer le client natif à partir de url.value.
-      information.value = 'TODO 1 : instancier WebSocket dans useConnection.js.';
-      return;
+      current = new WebSocket(url.value);
     } catch {
       // Une URL syntaxiquement invalide peut échouer avant tout événement réseau.
       readyState.value = null;
@@ -35,33 +33,37 @@ export function useConnection() {
       return;
     }
     socket = current;
-    // TODO 2 — Reporter immédiatement l’état initial du nouvel objet.
-    // À compléter : readyState.value = ...
+    readyState.value = current.readyState;
     record('construction');
 
     function onOpen() {
       if (socket !== current) return;
-      // TODO 3 — Synchroniser l’état lors de open et renseigner le retour utilisateur.
-      // À compléter : état et information.
+      readyState.value = current.readyState;
+      information.value = 'Connexion ouverte ; vous pouvez envoyer un message.';
       record('open');
     }
     function onError() {
       if (socket !== current) return;
-      // TODO 4 — Afficher un diagnostic prudent, sans inventer un état ERROR.
-      // À compléter : information.value = ...
+      information.value = 'Connexion en erreur : vérifiez l’adresse, le serveur et l’onglet Réseau.';
       record('error', 'La cause précise n’est pas fournie par cet événement');
     }
     function onClose(event) {
       if (socket !== current) return;
-      // TODO 5 — Synchroniser l’état final et enregistrer les informations de fermeture.
-      // À compléter : état, information et record('close', ...).
+      readyState.value = current.readyState;
+      information.value = event.wasClean
+        ? 'Connexion fermée. Une nouvelle ouverture reste manuelle.'
+        : 'Connexion interrompue ou ouverture échouée. Vérifiez le diagnostic.';
+      record('close', `code=${event.code}; reason=${event.reason || '(vide)'}; wasClean=${event.wasClean}`);
     }
 
     // Câblage fourni : les exercices portent sur le contenu des gestionnaires.
+    const receive = (event) => { if (socket === current) onMessage(event); };
+    current.addEventListener('message', receive);
     current.addEventListener('open', onOpen);
     current.addEventListener('error', onError);
     current.addEventListener('close', onClose);
     removeListeners = () => {
+      current.removeEventListener('message', receive);
       current.removeEventListener('open', onOpen);
       current.removeEventListener('error', onError);
       current.removeEventListener('close', onClose);
@@ -70,11 +72,14 @@ export function useConnection() {
 
   function disconnect() {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
-    // TODO 6 — Demander une fermeture normale, puis reporter l’état courant.
-    // À compléter : fermeture normale et synchronisation d’état.
+    socket.close(1000, 'Fin de la séance');
+    readyState.value = socket.readyState;
     information.value = 'Fermeture demandée ; attente de l’événement close.';
     record('close demandé');
   }
+
+  // Fourni en S3 : une ouverture au montage ; les reprises restent manuelles.
+  onMounted(connect);
 
   // Fourni : libérer la connexion quand l’interface est démontée.
   onBeforeUnmount(() => {
@@ -83,5 +88,8 @@ export function useConnection() {
     socket = null;
   });
 
-  return { url, readyState, information, journal, label, canConnect, canClose, connect, disconnect };
+  // Fourni : accès au socket courant, sans le rendre réactif.
+  function getSocket() { return socket; }
+
+  return { getSocket, url, readyState, information, journal, label, canConnect, canClose, connect, disconnect };
 }

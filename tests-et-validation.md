@@ -1,46 +1,63 @@
-# Recette de S2 — Ouvrir, diagnostiquer, fermer
+# Recette de S3 — Envoyer, recevoir, continuer après une erreur
 
-**Bloc final : 20 minutes.** Prévoir environ 12 minutes pour les cinq scénarios, 5 minutes pour comparer à la correction, puis 3 minutes pour le bilan et la remise des preuves. Tester la solution après les six TODO.
+**15 minutes :** 9 min de tests, 4 min de comparaison avec le corrigé, 2 min de bilan. Terminez les sept TODO avant cette recette. Ouvrez le panneau Réseau de la connexion `:3000/chat` et la section Atelier de l’interface.
 
-## Matrice à renseigner
+## Jeu de données et matrice à renseigner
 
-| Test | Manipulation | Attendu | Résultat observé / acquis ? |
+| Test | Données / manipulation | Attendu | Observation / acquis ? |
 |---|---|---|---|
-| T1 · Ouverture | Backend démarré. URL `ws://127.0.0.1:3000/chat`. Cliquer sur Connecter. | `construction` à 0 puis `open` à 1 ; badge Connecté. URL métier et statut 101 repérés dans le réseau HTTP/1.1. | |
-| T2 · Fermeture volontaire | Depuis T1, cliquer sur Déconnecter. Attendre 5 s après `close`. | Journal de demande puis `close` ; état final 3. Code 1000 et fermeture propre dans le scénario nominal local. Aucun nouvel `open` spontané. | |
-| T3 · Serveur arrêté avant tentative | D’abord fermer la connexion. Arrêter le backend avec Ctrl+C. Recliquer sur Connecter avec l’URL correcte. | Pas de `open` ; `error` puis `close`, état final 3. Texte prudent. Redémarrer ensuite le backend ; il faut cliquer pour retenter. | |
-| T4 · Mauvais chemin | Backend démarré, connexion précédente fermée. Remplacer `/chat` par `/absent`, puis Connecter. | Échec d’ouverture, diagnostic et retour à l’état fermé. Ne pas imposer un statut HTTP ou un texte d’erreur identique dans tous les navigateurs. | |
-| T5 · URL invalide | Connexion fermée. Utiliser `ws://127.0.0.1:3000/chat#fragment`. | Exception de construction capturée, indication Adresse invalide, pas de faux succès ; aucune nouvelle socket créée. Restaurer l’URL correcte. | |
+| T1 · Aller-retour | Attendre la connexion automatique, envoyer `Bonjour le salon` | Une demande `chat:send`, une réponse `chat:message` avec id et date serveur ; une seule ligne ajoutée sans rechargement | |
+| T2 · Plusieurs envois | Envoyer successivement `Un`, `Deux`, `Un` | Trois lignes supplémentaires dans cet ordre, trois identifiants distincts malgré le texte répété | |
+| T3 · Texte et espaces | Envoyer `  Salut 👋 — café  ` puis `<b>Bonjour</b>` | Extrémités nettoyées, accents/emoji conservés ; balises visibles comme texte | |
+| T4 · Entrée vide | Envoyer trois espaces | Diagnostic local, aucune trame de chat sortante, aucune ligne ajoutée, brouillon conservé | |
+| T5 · Hors connexion | Dans Atelier, Déconnecter ; revenir dans général et observer le bouton puis faire le contrôle de fonction décrit dans TP A | Bouton désactivé ; même appelé directement, le gestionnaire refuse l’envoi sans vider le brouillon | |
+| T6 · Réponses invalides | Reconnecter, noter le nombre de lignes ; cliquer chacun des cinq boutons Atelier | Chaque cas affiche un diagnostic ; nombre de lignes inchangé, connexion toujours ouverte | |
+| T7 · Reprise du travail | Après T6, envoyer `Après l’erreur` | Réponse réelle affichée une seule fois, anciennes lignes conservées | |
 
-Pour T3, arrêter le serveur **avant** la tentative. Le test d’une perte réseau au milieu d’un échange, la détection de connexions inactives et la reprise automatique appartiennent à S5.
+Le jeu de réponses brutes est fourni dans `frontend/src/responseFixtures.js` dans les deux projets : JSON tronqué, champs manquants, contenu numérique, date invalide et `null`. Les boutons n’injectent aucune réponse valide et n’ajoutent donc pas de faux messages à votre preuve réseau.
 
-## Comment interpréter les écarts ?
+### Vérifications complémentaires si vous avancez vite
 
-- **T1 reste en cours, mais le réseau indique 101 :** vérifier TODO 3 et la copie réactive d’état.
-- **T1 affiche Connecté avec serveur arrêté :** le succès a probablement été affiché au mauvais endroit.
-- **T2 affiche Fermé dès le clic sans journal `close` :** vérifier que l’état final n’a pas été forcé avant l’événement.
-- **T3 ou T4 reste bloqué visuellement :** vérifier TODO 5 ; l’état doit être mis à jour à la fermeture.
-- **T5 reste en cours :** vérifier le `try/catch` fourni et le retrait du `return` provisoire de TODO 1.
-- **Une fermeture donne 1006 :** cela décrit une fermeture sans négociation normale ; ce nombre ne prouve pas à lui seul un mauvais chemin ou un serveur arrêté.
+- **Limite :** coller 500 lettres `a`, puis essayer une lettre supplémentaire. Le champ empêche le dépassement ; le serveur applique aussi sa limite. Pour vérifier le serveur indépendamment du champ, utilisez le client console ci-dessous.
+- **Deux onglets :** ouvrir A et B et attendre leur connexion automatique, envoyer depuis A. Seul A reçoit une nouvelle ligne. La diffusion sera construite en S4.
+- **Reconnexion manuelle :** déconnecter puis reconnecter trois fois, envoyer une fois : une seule réponse ajoutée. Cela contrôle le retrait des anciens écouteurs.
 
-Le panneau réseau peut conserver une entrée d’une tentative précédente. Distinguez-la de la nouvelle par son URL et l’ordre d’apparition. Une erreur de connexion peut être affichée dans la console par le navigateur même si votre gestionnaire a correctement traité son effet dans l’interface.
+Client temporaire dans la console du navigateur pour vérifier le refus backend (facultatif) :
 
-## Bilan individuel
+```js
+const probe = new WebSocket('ws://127.0.0.1:3000/chat');
+probe.addEventListener('message', (event) => {
+  console.log(JSON.parse(event.data)); // attendu : chat:error
+  probe.close(1000, 'Test terminé');
+});
+probe.addEventListener('open', () => {
+  probe.send(JSON.stringify({ event: 'chat:send', data: { content: 'a'.repeat(501) } }));
+});
+```
 
-Répondez en une ou deux phrases :
+Ce client a sa propre connexion : sa réponse ne doit pas apparaître dans la liste de l’application. Remplacer le contenu par `42` permet de vérifier le contrôle du type.
 
-1. Pourquoi faut-il attendre `open` pour afficher Connecté ?
-2. Quelle différence faites-vous entre appeler `close()` et recevoir `close` ?
-3. Pourquoi un événement `error` ne permet-il pas d’affirmer « le serveur est éteint » ?
-4. Quelle preuve distingue la connexion du chat de celle de Vite ?
+## Comprendre un écart
 
-## Livrables apprenant
+| Observation | À vérifier |
+|---|---|
+| La page recharge | `@submit.prevent` a-t-il été conservé ? |
+| Trame sortante avec `[object Object]` | Avez-vous sérialisé l’objet ? |
+| Aucune réponse à une demande | Nom exact `chat:send`, enveloppe `data`, retour du backend et redémarrage |
+| Le serveur répond mais rien ne s’affiche | Décodage de `event.data`, validation, ajout de `response.data` |
+| Une réponse apparaît deux fois | Ajout local à l’envoi ou écouteur supplémentaire |
+| Les anciennes lignes disparaissent après T6 | Le `catch` ne doit modifier que le diagnostic |
+| Une deuxième fenêtre reste vide | Résultat normal en S3 : réponse uniquement à l’émetteur |
 
-- `frontend/src/useConnection.js` complété ;
-- matrice T1–T5 renseignée, y compris les observations inattendues ;
-- relevé ou capture de l’URL `:3000/chat` et de l’ouverture ;
-- réponses au bilan.
+## Bilan et remise
 
-## Critère de passage
+Répondre brièvement :
 
-La connexion native s’ouvre, son état est visible, une fermeture volontaire aboutit et les trois échecs demandés ne produisent pas de faux succès. L’apprenant explique ses observations. Une difficulté isolée de l’outil réseau peut être accompagnée par le formateur ; elle ne doit pas occuper toute la séance.
+1. Pourquoi `send()` ne suffit-il pas à prouver l’aller-retour ?
+2. Quelle différence entre `message` et `chat:message` ?
+3. Pourquoi `JSON.parse` et `isChatMessage` sont-ils tous deux nécessaires ?
+4. Qui attribue l’identifiant et la date, et pourquoi ?
+
+Remettre les deux fichiers complétés, la matrice T1–T7 et une capture ou un relevé comportant la demande JSON, la réponse JSON et son entrée visible. Les injections locales ne remplacent pas T1.
+
+**Critère de passage :** aller-retour réel visible sans rechargement, plusieurs envois distincts et poursuite normale après une réponse mal formée. La conservation après rechargement et l’échange entre utilisateurs ne sont pas évalués.

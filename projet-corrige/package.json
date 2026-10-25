@@ -12,6 +12,7 @@
   "scripts": {
     "dev:front": "npm run dev --workspace frontend",
     "dev:back": "npm run dev --workspace backend",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "test": "npm run build --workspace backend && node --test tests/*.test.mjs"
   }
 }

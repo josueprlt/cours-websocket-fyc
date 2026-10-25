@@ -1,7 +1,19 @@
-import { WebSocketGateway } from '@nestjs/websockets';
+import { randomUUID } from 'node:crypto';
+import { MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 
-// Fourni en S1 : point de connexion natif, sur le port HTTP 3000.
-// S2 : le navigateur ouvrira cette connexion et affichera son état.
-// S3 : les gestionnaires de messages seront ajoutés ici.
 @WebSocketGateway({ path: '/chat' })
-export class ChatGateway {}
+export class ChatGateway {
+  @SubscribeMessage('chat:send')
+  handleMessage(@MessageBody() data: unknown) {
+    // Fourni : toute entrée réseau doit être vérifiée, même avec un formulaire.
+    const content = typeof data === 'object' && data !== null && 'content' in data
+      && typeof data.content === 'string' ? data.content.trim() : '';
+    if (!content || content.length > 500) {
+      return { event: 'chat:error', data: { message: 'Contenu attendu : 1 à 500 unités UTF-16 après trim().' } };
+    }
+    // TODO 3 — Construire le message enrichi par le serveur.
+    // Créer ici la variable message.
+    // TODO 4 — Retourner l’enveloppe uniquement à l’émetteur.
+    return; // Remplacer par l’enveloppe de réponse.
+  }
+}

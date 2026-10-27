@@ -1,17 +1,24 @@
-# Séquence 3 — Projet corrigé
+# Séquence 4 — Projet corrigé
 
-La connexion démarre automatiquement au montage de l’interface. Le chat est affiché par défaut ; l’onglet **Atelier** rassemble les contrôles de connexion, le journal et les simulations. Après un échec ou une fermeture, utilisez **Réessayer** dans le chat ou **Connecter** dans Atelier. La reprise automatique après coupure reste pour S5.
+Solution complète du registre, de la diffusion et du nettoyage. `npm test` lance des tests avec trois clients réels sur un port éphémère, ainsi que des tests des gestionnaires Vue ; aucun serveur manuel nécessaire.
 
-Prérequis : Node 24.x. Depuis ce dossier, lancer `npm ci`, puis `npm run dev:back` et `npm run dev:front` dans deux terminaux.
+Prérequis : Node 24.x. Depuis ce dossier :
 
-- Interface : http://127.0.0.1:5173
-- Diagnostic HTTP : http://127.0.0.1:3000/health
-- Connexion WebSocket : ws://127.0.0.1:3000/chat
+```sh
+npm ci
+npm run dev:back
+```
 
-Le cycle de vie S2 est fourni. `useConnection.js` reçoit un callback de réception et expose le socket courant via `getSocket()`. Le formulaire et `MessageList.vue` sont prêts ; les réponses invalides de `responseFixtures.js` peuvent être injectées localement avec les boutons Atelier.
+Dans un second terminal :
 
-Solution complète des sept TODO. `npm test` compile le backend puis vérifie les échanges réels sur un port éphémère et les gestionnaires frontend ; aucun serveur manuel nécessaire.
+```sh
+npm run dev:front
+```
 
-Suivre le [TP](../tp-guide.md), le [cours](../cours.md) et la [recette](../tests-et-validation.md). Le contrat utilise `{ event, data }` ; le serveur répond uniquement à l’émetteur. La liste reste en mémoire dans cet onglet.
+Ouvrir trois fenêtres à `http://127.0.0.1:5173`. Connexion automatique à `ws://127.0.0.1:3000/chat`. Diagnostic HTTP : `http://127.0.0.1:3000/health`. Après modification backend, arrêter et relancer `npm run dev:back`, puis reconnecter les fenêtres avec Réessayer ou Atelier → Connecter. La reconnexion reste manuelle.
 
-`npm run build` compile les deux workspaces. Après modification du backend, arrêter puis relancer `npm run dev:back` et reconnecter le navigateur. Les deux projets partagent les ports : ne pas les lancer simultanément. Arrêter les services avec Ctrl+C.
+Le serveur attribue les identifiants de connexion. Le nom « Vous » en bas à gauche est un champ éditable discret (32 caractères maximum). Le nom choisi accompagne les prochains messages ; les anciens conservent leur nom au moment de l’envoi. Vos messages apparaissent à gauche en vert, ceux des autres à droite en gris. Le serveur annonce votre identifiant avec un accueil privé `chat:welcome` ; cette identité détermine l’alignement, même en cas de noms identiques. Sans nom dans le message, l’interface affiche « Client » et le préfixe d’identifiant ; les valeurs complètes sont visibles au survol de la mention sous la bulle et dans les trames. Chaque liste reçoit seulement les messages diffusés pendant sa connexion. Un rechargement efface l’historique local.
+
+`npm run build` compile les deux workspaces. Les deux projets partagent les ports : ne pas les lancer simultanément. Arrêter les services avec Ctrl+C.
+
+Suivre le [cours](../cours.md), le [TP](../tp-guide.md) et la [recette](../tests-et-validation.md). Les scripts et transcriptions des capsules sont dans [videos.md](../videos.md). Aucun laboratoire d’accumulation n’est requis.

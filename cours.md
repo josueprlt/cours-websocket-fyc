@@ -1,155 +1,133 @@
-# Séquence 3 — Envoyer et recevoir les messages du chat
+# Séquence 4 — Diffuser les messages à plusieurs utilisateurs
 
-La connexion démarre automatiquement au montage de l’interface. Le chat est affiché par défaut ; l’onglet **Atelier** rassemble les contrôles de connexion, le journal et les simulations. Après un échec ou une fermeture, utilisez **Réessayer** dans le chat ou **Connecter** dans Atelier. La reprise automatique après coupure reste pour S5.
+**Objectif :** transformer l’aller-retour individuel de S3 en conversation collective. À la fin, trois fenêtres peuvent écrire et chacune reçoit une seule copie de chaque message, émetteur compris. Le serveur libère les connexions fermées.
 
-En S2, vous avez ouvert une connexion WebSocket, observé ses états et demandé sa fermeture. Vous disposez maintenant d’un canal. Cette séquence lui donne un usage : transmettre du texte, le traiter sur le serveur et afficher la réponse sans recharger la page.
+**Prérequis :** avoir compris S3, le contrat `{ event, data }`, `JSON.stringify`, les événements WebSocket et les états de connexion. Le formulaire, la validation JSON et le cycle de vie Vue sont fournis. Durée totale : **90 minutes**, selon le [parcours](README.md). Pour les 15 premières minutes : lire ce cours (9 min), regarder la capsule 1 ou sa transcription (4 min), répondre aux questions (2 min).
 
-**Durée : environ 1 h 30. Objectif :** réaliser un aller-retour complet. Prérequis : S2 validée, objets JavaScript, fonctions, événements et notions de `ref` Vue. La connexion corrigée de S2 est fournie pour se concentrer sur les messages.
+## 1. Une connexion par fenêtre
 
-| Étape | Durée | Supports et activité |
-|---|---:|---|
-| Définir les échanges | 15 min | Ce cours §1–3 (10 min), capsule trajet (4 min), question (1 min) |
-| Envoyer depuis le formulaire | 20 min | TP A : garde d’état et sérialisation, TODO 1–2 |
-| Traiter sur le serveur | 20 min | Capsule live coding (5 min), TP B et TODO 3–4 (15 min) |
-| Recevoir et afficher | 20 min | Fiche (4 min), TP C et TODO 5–7 (16 min) |
-| Tester et corriger | 15 min | Jeu de tests (9 min), corrigé (4 min), bilan (2 min) |
-| **Total** | **90 min** | Les vidéos sont incluses dans les durées |
-
-Les scripts et transcriptions des capsules sont dans [videos.md](videos.md). Ce dépôt contient les supports de tournage, pas de vidéos enregistrées. En autonomie, lire les transcriptions à la place des capsules.
-
-## 1. Du formulaire à la réponse
+En S3, le gestionnaire retournait une enveloppe : `WsAdapter` l’envoyait uniquement à la connexion demandeuse. En S4, le serveur connaît les connexions et transmet le même message à chacune d’elles.
 
 ```text
-Navigateur de l’émetteur                  Backend NestJS
-Formulaire → sendMessage()
-  vérification OPEN
-  objet → JSON.stringify → send() ─────> WsAdapter : JSON → event + data
-                                         handleMessage(data)
-                                         contrôle du texte
-                                         identifiant + date
-message ← réponse JSON <──────────────── retour { event, data }
-  event.data → JSON.parse
-  contrôle de la forme
-  messages.value.push → Vue affiche
+S3 : A ── chat:send ──> serveur ── chat:message ──> A
+
+S4 :                              registre des connexions
+                                  ┌───────────────────┐
+A ── chat:send ──> serveur ────────>│ socket A → id A    │──> A : +1 message
+                 contrôle         │ socket B → id B    │──> B : +1 message
+                 crée le message  │ socket C → id C    │──> C : +1 message
+                 sérialise 1 fois  └───────────────────┘
+                                   envoi si état OPEN
 ```
 
-L’envoi et la réception sont deux moments distincts. `send()` ne retourne pas la réponse métier et n’est pas une promesse de livraison. L’interface annonce donc « Envoi demandé », puis « Réponse reçue » uniquement après traitement de la réponse. Un serveur qui disparaît entre ces moments peut laisser l’application en attente : la reprise et les délais d’attente seront étudiés ultérieurement.
+Les navigateurs ne communiquent pas directement entre eux. Un envoi de A produit une trame entrante sur le serveur et trois trames sortantes si A, B et C sont ouverts. Chaque fenêtre ajoute le message seulement lors de sa réception. L’émetteur est inclus : aucun ajout local au clic, aucune exclusion de A dans la boucle.
 
-La liste commence vide. Vous n’ajoutez aucun message au clic : chaque entrée visible doit provenir d’une réponse validée. Cela rend l’aller-retour vérifiable et évite un double affichage, à l’envoi puis à la réception.
+Nous simulons trois utilisateurs avec trois fenêtres. Techniquement, le registre représente des **connexions**, pas des comptes authentifiés : deux onglets de la même personne représentent deux connexions.
 
-## 2. Fixer le contrat JSON
+## 2. Un registre partagé par le gateway
 
-WebSocket transporte les données ; il ne définit pas les champs de notre chat. Nous choisissons une enveloppe commune. L’adaptateur `WsAdapter` déjà configuré attend, en entrée, un événement applicatif et ses données. Le nom d’événement doit correspondre à celui du gestionnaire NestJS. [Adaptateur WebSocket de NestJS](https://docs.nestjs.com/websockets/adapter).
+Le registre est une propriété du gateway, conservée entre les appels. Une collection créée à l’intérieur de `handleMessage` repartirait de zéro à chaque message.
 
-### Demande du navigateur
+Nous choisissons `Map<WebSocket, string>` : la clé est l’objet connexion et la valeur est un identifiant attribué par le serveur.
+
+| Opération | Rôle |
+|---|---|
+| `new Map<WebSocket, string>()` | Créer un registre vide |
+| `clients.set(client, randomUUID())` | Associer une connexion à un identifiant |
+| `clients.get(sender)` | Retrouver l’auteur d’une demande |
+| `clients.keys()` | Parcourir les connexions |
+| `clients.delete(client)` | Retirer une connexion fermée |
+| `clients.size` | Observer le nombre d’entrées |
+
+Un `Set<WebSocket>` conviendrait pour conserver uniquement les connexions. La `Map` simplifie ici l’association avec leur identifiant. Deux appels à `set` sur la même clé ne créent pas deux entrées ; on attribue toutefois l’identifiant une seule fois à l’ouverture pour qu’il reste stable pendant la connexion.
+
+NestJS appelle `handleConnection(client)` à l’arrivée d’un client et `handleDisconnect(client)` lors de sa déconnexion, lorsque le gateway implémente les interfaces correspondantes. Ces méthodes servent à maintenir le registre. [Cycle de vie des gateways NestJS](https://docs.nestjs.com/websockets/gateways#lifecycle-hooks).
+
+```text
+Connexion ouverte → ajout (socket, UUID) → messages → fermeture observée → suppression
+                     size : 2 → 3                                 size : 3 → 2
+```
+
+L’identifiant de connexion change à la reconnexion. Il ne constitue ni un mot de passe ni une identité utilisateur permanente. Ce registre est en mémoire dans un seul processus ; un redémarrage le vide.
+
+## 3. Le contrat de S3, enrichi de l’auteur
+
+Le navigateur envoie le contenu et un nom d’affichage facultatif :
 
 ```json
-{
-  "event": "chat:send",
-  "data": { "content": "Bonjour le salon 👋" }
-}
+{ "event": "chat:send", "data": { "content": "Bonjour à tous !", "senderName": "Alice" } }
 ```
 
-### Réponse du serveur à ce même navigateur
+Le serveur contrôle et nettoie le texte comme en S3 (1 à 500 unités UTF-16 après `trim()`). Il retrouve `senderId` dans le registre puis construit **un seul message** :
 
 ```json
 {
   "event": "chat:message",
   "data": {
-    "id": "b7a26941-5b35-478a-bac0-0cc42315ae21",
-    "content": "Bonjour le salon 👋",
-    "createdAt": "2026-10-21T10:00:00.000Z"
+    "id": "8a2f3297-89be-47a2-941e-32bcc93ba946",
+    "senderId": "fc7b0261-d068-4615-a189-1fc542031140",
+    "senderName": "Alice",
+    "content": "Bonjour à tous !",
+    "createdAt": "2026-10-27T10:00:00.000Z"
   }
 }
 ```
 
-L’identifiant et la date ci-dessus sont illustratifs ; ils changent à chaque traitement. `randomUUID()` génère l’identifiant sur le serveur ; `new Date().toISOString()` produit une date UTC, reconnaissable au `Z`. Le composant fourni la présente à l’heure locale. Le client ne choisit pas ces valeurs.
+Ces valeurs sont illustratives. `id` identifie le message ; `senderId` identifie la connexion qui l’a émis ; `createdAt` date le traitement serveur. Tous les destinataires reçoivent les **mêmes valeurs**. Deux envois du même texte ont deux `id` différents, même si leur `senderId` est identique. Le serveur n’accepte pas un auteur choisi dans la demande du navigateur.
 
-| Champ | Qui le produit ? | Règle du TP |
-|---|---|---|
-| `event` | Chaque émetteur | `chat:send`, `chat:message` ou `chat:error` |
-| `data.content` | Client, puis normalisé par le serveur | Chaîne non vide après `trim()`, longueur ≤ 500 |
-| `data.id` | Serveur | UUID créé pour chaque traitement accepté |
-| `data.createdAt` | Serveur | Chaîne ISO UTC générée lors du traitement |
-| `data.message` | Serveur, pour `chat:error` | Explication du refus |
+L’interface S4 permet de modifier son nom directement dans le champ discret « Vous », en bas à gauche. Le serveur normalise ce nom (espaces extérieurs retirés, 32 unités UTF-16 maximum, « Vous » par défaut) et le joint aux prochains messages dans `senderName`. Les anciens messages conservent leur nom au moment de l’envoi. Ce nom est une étiquette choisie librement, pas une identité authentifiée.
 
-La limite utilise `.length` JavaScript : elle compte des unités UTF-16, pas forcément des caractères visibles. Un emoji peut en occuper deux. Nous appliquons la même règle des deux côtés. `trim()` retire les espaces aux extrémités et conserve ceux à l’intérieur.
+À l’ouverture, un message privé `chat:welcome` contenant `data.senderId` indique au navigateur son identifiant serveur. Le client le mémorise sans ajouter de bulle. Il peut ainsi reconnaître ses propres messages : à gauche, en vert, avec la mention « (vous) ». Les autres sont à droite, en gris. Deux noms identiques n’affectent pas cette distinction. Après reconnexion, les anciens identifiants restent mémorisés pendant la vie de la page. Les identifiants complets restent accessibles au survol de la mention sous la bulle et dans les trames. Ce câblage d’interface est fourni dans les deux projets et ne constitue pas un TODO supplémentaire.
 
-Une demande avec un contenu absent, numérique, vide ou trop long reçoit :
+## 4. Diffuser aux connexions ouvertes
 
-```json
-{
-  "event": "chat:error",
-  "data": { "message": "Contenu attendu : 1 à 500 unités UTF-16 après trim()." }
-}
+Avec `@ConnectedSocket()`, le gestionnaire récupère la connexion demandeuse. `@MessageBody()` lui fournit les données déjà décodées. Il n’a pas besoin d’un nouveau `JSON.parse`.
+
+Après validation, on prépare l’enveloppe et on la sérialise **avant** la boucle. On parcourt ensuite le registre et on appelle `send(payload)` sur chaque connexion dont `readyState === WebSocket.OPEN`. Ici, `WebSocket` est importé de `ws` côté Node ; côté navigateur, l’API native est déjà disponible. [Exemple de diffusion de la bibliothèque ws](https://github.com/websockets/ws#server-broadcast).
+
+```text
+Créer un id + une date + retrouver senderId
+                     ↓
+              JSON.stringify une fois
+                     ↓
+           pour chaque socket du registre
+                     ↓
+          OPEN ? oui → send(payload)
+                 non → ne pas envoyer
 ```
 
-Ce refus métier n’est pas l’événement natif `error` de S2. Il arrive lui aussi dans un événement natif `message`. Un paquet entrant qui n’est pas du JSON ou dont le nom d’événement est inconnu n’atteint pas nécessairement notre méthode : le TP ne promet pas de réponse métier à toute donnée arbitraire.
+La garde d’état s’applique à chaque destinataire, pas seulement à l’émetteur. Une connexion peut être encore dans la collection alors qu’elle est en cours de fermeture. La garde évite de lui demander un envoi ; le hook de déconnexion supprime ensuite la référence.
 
-**Question :** lequel des trois champs `content`, `id`, `createdAt` doit figurer dans la demande ? Pourquoi les deux autres appartiennent-ils au serveur ?
+**Un seul chemin de succès :** après la diffusion, ne retournez pas l’enveloppe `chat:message`. Dans notre `WsAdapter`, un résultat retourné serait à nouveau envoyé au demandeur. A recevrait alors deux trames, tandis que B et C n’en recevraient qu’une. Un retour `undefined` ne déclenche pas cette réponse supplémentaire.
 
-## 3. Préparer et envoyer le texte
+Le refus `chat:error` conserve son retour S3 : seule la connexion qui a soumis une donnée invalide reçoit l’explication. On ne diffuse pas ce refus à tout le salon.
 
-Le formulaire utilise `@submit.prevent` pour éviter la navigation HTML habituelle. Son bouton est désactivé si la connexion n’est pas ouverte. Cette aide visuelle ne remplace pas le contrôle dans la fonction : on vérifie l’objet courant au moment de l’envoi.
+> **Comprendre `bufferedAmount` — sans laboratoire obligatoire**
+>
+> `send()` met des données en attente d’envoi ; il ne confirme pas leur affichage chez le destinataire. Dans l’API navigateur, `bufferedAmount` indique le nombre d’octets soumis par `send()` et encore en attente de transmission. Une valeur élevée peut révéler que l’application produit plus vite que le réseau ne transmet. Une valeur nulle ne prouve pas la réception ni le traitement par le serveur. Côté `ws`, cette propriété renseigne aussi les octets en file d’envoi. La gestion des clients lents nécessite une politique spécifique ; elle n’est pas demandée ici. Aucun test de saturation ou d’accumulation ne fait partie du parcours ni de la validation. [MDN : bufferedAmount](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/bufferedAmount), [API ws](https://github.com/websockets/ws/blob/master/doc/ws.md#websocketbufferedamount).
+
+## 5. Nettoyer les connexions et les écouteurs
+
+Retirer une connexion du registre évite de conserver des références inutiles. Fermer la fenêtre ou cliquer sur Déconnecter conduit normalement à un événement de fermeture. Le serveur appelle alors `handleDisconnect`, qui exécute `delete`. Une seconde suppression est sans effet : elle ne retire pas un autre client.
+
+Une coupure silencieuse n’est pas toujours détectée immédiatement. La recette porte sur des fermetures observées ; elle ne promet pas une détection instantanée d’un câble débranché. La surveillance active et la reprise automatique dépassent S4.
+
+Côté navigateur, un autre nettoyage concerne les écouteurs. `useConnection.js` possède déjà un écouteur `message` et son retrait avec la même référence de fonction. Un second callback qui appelle lui aussi `onMessage` ferait traiter deux fois une seule trame.
 
 ```js
-if (!socket || socket.readyState !== WebSocket.OPEN) {
-  notice.value = 'Ouvrez la connexion avant d’envoyer.';
-  return;
-}
-const request = { event: 'chat:send', data: { content } };
-socket.send(JSON.stringify(request));
+// Deux fonctions distinctes : la même trame est traitée deux fois.
+current.addEventListener('message', receive);
+current.addEventListener('message', (event) => receive(event));
 ```
 
-Un objet JavaScript n’est pas une chaîne JSON : la sérialisation fabrique le texte transmis. La méthode native `send()` met les données en file d’envoi. Pendant `CONNECTING`, elle peut lever une exception ; en fermeture ou après fermeture, les données sont écartées. D’où le garde-fou et le `try/catch` fourni. [Méthode `send()` — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send).
+Réenregistrer exactement la même référence avec les mêmes paramètres ne produit pas ce doublon dans `EventTarget`. Le piège est la création d’une nouvelle fonction, notamment une fonction anonyme. [MDN : addEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener).
 
-Le brouillon est vidé seulement après l’appel réussi. Cela ne prouve pas sa livraison. Il reste intact en cas de refus local (hors connexion ou contenu vide). L’historique n’est jamais modifié par `sendMessage()`.
+Comptez d’abord les trames, puis les appels du gestionnaire et les entrées affichées. Une trame et deux appels orientent vers les écouteurs ; deux trames seulement chez l’émetteur orientent vers le retour serveur resté en place. Ne masquez pas le défaut en supprimant les textes identiques : deux vrais envois identiques doivent rester visibles.
 
-## 4. Traiter sur le serveur
+## 6. Questions avant le TP
 
-Dans `backend/src/chat.gateway.ts`, `@SubscribeMessage('chat:send')` sélectionne la demande et `@MessageBody()` donne son champ `data`, déjà décodé par l’adaptateur. Ne faites pas un second `JSON.parse(data)`.
+1. Si A envoie et que A, B et C sont ouverts, qui reçoit ? Combien de trames le serveur envoie-t-il ?
+2. Pourquoi créer l’identifiant du message avant la boucle ? Quelle différence avec l’identifiant de connexion ?
+3. Pourquoi contrôler `OPEN` **et** supprimer les connexions fermées ?
 
-Le contrôle du contenu est fourni. Il est nécessaire même si le formulaire vérifie déjà la saisie : un autre client peut envoyer directement une demande. L’exercice consiste ensuite à construire le message et à retourner l’enveloppe attendue.
-
-```ts
-const message = {
-  id: randomUUID(),
-  content,
-  createdAt: new Date().toISOString(),
-};
-return { event: 'chat:message', data: message };
-```
-
-Dans ce montage, l’adaptateur sérialise le résultat et l’envoie sur la connexion demandeuse. Il n’y a ni parcours des autres clients ni diffusion. Deux onglets connectés auront donc des listes différentes. La diffusion sera l’objet de S4. L’identifiant distingue deux envois de texte identique ; il ne constitue pas un mécanisme de déduplication des tentatives.
-
-## 5. Recevoir, décoder, vérifier, afficher
-
-`message` est le nom de l’événement natif de réception. `chat:message` est un champ dans le JSON de notre application. Ce sont deux niveaux différents.
-
-```js
-socket.addEventListener('message', receiveMessage);
-```
-
-Ce branchement et son retrait sont déjà assurés par `useConnection.js`. Ne rajoutez pas un deuxième écouteur : cela afficherait deux fois la même réponse. Le gestionnaire reçoit un `MessageEvent`. Pour un message texte, sa propriété `data` contient une chaîne. [Événement `message` — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/message_event).
-
-Trois étapes sont indispensables :
-
-1. Décoder avec `JSON.parse(event.data)` dans un `try/catch`.
-2. Vérifier l’événement et les champs avec `isChatMessage(response)`, fourni.
-3. Ajouter `response.data` à la liste réactive.
-
-`JSON.parse('null')` réussit, mais n’obtient pas un message. Une chaîne JSON syntaxiquement correcte peut également avoir un contenu numérique ou oublier la date. Le décodage et le contrôle de forme répondent à deux problèmes distincts.
-
-Le composant `MessageList.vue` reçoit la liste et utilise `id` comme clé. Il affiche le texte avec `{{ message.content }}` : un texte comme `<b>Bonjour</b>` doit rester visible tel quel, sans être interprété comme du HTML. Ne remplacez pas cette interpolation par `v-html`.
-
-Le `catch` affiche un diagnostic sans vider les réponses déjà reçues, sans ajouter l’entrée invalide et sans fermer la connexion. L’envoi suivant doit encore fonctionner. Une réponse `chat:error` conforme affiche son explication sans entrer dans la conversation.
-
-## 6. Et les échanges binaires ?
-
-WebSocket permet aussi de transmettre des données binaires, par exemple avec un `Blob` ou un `ArrayBuffer`. À la réception, leur représentation dépend notamment de `binaryType`. Notre protocole S3 accepte uniquement le texte JSON : son gestionnaire rejette une donnée non textuelle. Aucun exercice binaire n’est obligatoire. Envoyer un fichier exigerait de définir un autre contrat et un traitement adapté ; `JSON.parse()` n’est pas un décodeur universel de données binaires. [Données d’un événement `message` — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/message_event).
-
-## 7. Passer à la pratique
-
-Suivez [tp-guide.md](tp-guide.md), puis [tests-et-validation.md](tests-et-validation.md). La validation est obtenue lorsqu’un texte envoyé revient enrichi et apparaît sans rechargement, plusieurs fois de suite, et qu’une réponse mal formée n’empêche pas la suite.
-
-L’historique reste en mémoire dans l’onglet : recharger efface la liste. Ni stockage, ni authentification, ni diffusion, ni reconnexion automatique ne sont nécessaires à cette séance.
+Passez au [TP](tp-guide.md). Réponses et explication du trajet dans le [corrigé](corriges.md). Le salon ne rejoue pas les anciens messages : un client arrivé plus tard ne reçoit que les prochaines diffusions. L’historique reste propre à chaque page et disparaît au rechargement.

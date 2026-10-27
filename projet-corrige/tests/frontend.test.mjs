@@ -45,17 +45,23 @@ test('gestionnaires Vue : garde, sérialisation, réception, erreurs et reconnex
     assert.equal(socket.sent.length, 0); // CONNECTING
     socket.open();
     chat.sendMessage();
-    assert.deepEqual(JSON.parse(socket.sent[0]), { event: 'chat:send', data: { content: 'Bonjour' } });
+    assert.deepEqual(JSON.parse(socket.sent[0]), { event: 'chat:send', data: { content: 'Bonjour', senderName: 'Vous' } });
     assert.equal(chat.draft.value, '');
     assert.equal(chat.messages.value.length, 0); // aucun ajout optimiste
-    const valid = JSON.stringify({ event: 'chat:message', data: { id: 'test-1', content: 'Bonjour', createdAt: '2026-10-21T10:00:00.000Z' } });
+    const valid = JSON.stringify({ event: 'chat:message', data: { id: 'test-1', senderId: 'client-a', content: 'Bonjour', createdAt: '2026-10-21T10:00:00.000Z' } });
+    socket.receive(JSON.stringify({ event: 'chat:welcome', data: { senderId: 'client-a' } }));
+    assert.equal(chat.messages.value.length, 0);
     socket.receive(valid);
+    assert.equal(chat.messages.value[0].isOwn, true);
     assert.equal(chat.messages.value.length, 1);
     for (const fixture of responseFixtures) {
       socket.receive(fixture.raw);
       assert.match(chat.notice.value, /invalide/);
       assert.equal(chat.messages.value.length, 1);
     }
+    socket.receive(valid.replace('senderId', 'unknownAuthor'));
+    assert.equal(chat.messages.value.length, 1);
+    assert.match(chat.notice.value, /invalide/);
     socket.receive(new ArrayBuffer(2));
     assert.match(chat.notice.value, /invalide/);
     socket.receive(JSON.stringify({ event: 'chat:error', data: { message: 'Refus du serveur' } }));
@@ -75,9 +81,15 @@ test('gestionnaires Vue : garde, sérialisation, réception, erreurs et reconnex
     assert.equal(chat.messages.value.length, 1);
     next.receive(valid.replace('test-1', 'test-2'));
     assert.equal(chat.messages.value.length, 2);
+    next.receive(valid.replace('client-a', 'client-b').replace('test-1', 'test-3'));
+    assert.equal(chat.messages.value.at(-1).isOwn, false);
+    chat.username.value = '  Alice  ';
+    chat.draft.value = 'Nouveau nom';
+    chat.sendMessage();
+    assert.equal(JSON.parse(next.sent.at(-1)).data.senderName, 'Alice');
     app.unmount();
     next.receive(valid);
-    assert.equal(chat.messages.value.length, 2);
+    assert.equal(chat.messages.value.length, 3);
     assert.equal(next.readyState, FakeSocket.CLOSED);
   } finally {
     globalThis.WebSocket = original;

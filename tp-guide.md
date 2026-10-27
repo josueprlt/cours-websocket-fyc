@@ -1,113 +1,94 @@
-# TP guidé — Un aller-retour complet
+# TP guidé — Du chat individuel au salon partagé
 
-Travaillez dans `projet`. La connexion de S2, l’interface, le contrôle des données et le composant d’affichage sont fournis. Sept TODO se répartissent entre `frontend/src/useChat.js` et `backend/src/chat.gateway.ts`. Consultez le corrigé après vos essais.
+Travaillez dans `projet`. L’envoi, la réception et les garde-fous S3 sont fournis ; le frontend est déjà adapté à `senderId`. Vous complétez cinq TODO backend, puis réalisez un sixième exercice de diagnostic côté navigateur. Le point de départ compile mais ne diffuse pas encore.
 
-## Préparer le poste
+## A — Enregistrer les clients connectés · 20 min
 
-Utilisez Node 24.x comme en S2. Arrêtez les anciens services pour libérer 3000 et 5173. Depuis `projet` :
+### Préparer et repérer · 6 min
+
+Prérequis : Node 24.x et npm. Arrêtez les anciens services sur 3000 et 5173. Depuis `projet`, exécutez :
 
 ```sh
 npm ci
 npm run dev:back
 ```
 
-Dans un deuxième terminal, depuis `projet` :
+Dans un second terminal, depuis le même dossier :
 
 ```sh
 npm run dev:front
 ```
 
-Ouvrez `http://127.0.0.1:5173` : la connexion démarre automatiquement. Avant tout exercice, le badge doit afficher Connecté. Le squelette compile mais n’envoie pas encore de message. Le bouton Envoyer affiche une consigne TODO.
+Ouvrez trois fenêtres A, B, C à `http://127.0.0.1:5173`. Chacune doit afficher Connecté ; elles se connectent automatiquement. Dans Atelier, vous trouvez les boutons de connexion et le journal. Le panneau Réseau → WebSocket doit viser `:3000/chat`, pas le canal Vite.
 
-**Si vous poursuivez votre projet S2 :** sauvegardez votre travail, reprenez les fichiers S3 `App.vue`, `useConnection.js`, `useChat.js`, `protocol.js`, `MessageList.vue`, `responseFixtures.js` dans `frontend/src`, puis `chat.gateway.ts` dans `backend/src`. Reprenez aussi `frontend/index.html` pour le titre. Les dépendances et l’adaptateur ne changent pas. `useConnection` conserve le cycle de vie S2 et fournit désormais un callback de réception et `getSocket()`.
+Repérez `backend/src/chat.gateway.ts` : les hooks, le gestionnaire `chat:send` et le contrôle de contenu. `@ConnectedSocket()` fournit `sender`. Le registre existe déjà sous une forme provisoire pour que le squelette compile.
 
-Le chat affiche les réponses en bulles, avec leur heure. L’identifiant serveur reste consultable au survol de « Reçu par le serveur » ou dans la trame réseau. L’onglet Atelier regroupe les contrôles de connexion, les injections et le journal repliable. Changer d’onglet conserve la connexion, le brouillon et les messages.
+Si vous reprenez votre propre S3, sauvegardez-le puis utilisez le squelette S4 : le contrat frontend inclut maintenant `senderId` et le backend utilise les types de `ws`. Ne copiez pas seulement le gateway sans actualiser les dépendances et le client.
 
-Le backend ne se relance pas automatiquement : après chaque modification TypeScript, arrêtez-le puis relancez `npm run dev:back`, et cliquez sur Réessayer dans le chat (ou Connecter dans Atelier). Vite actualise le frontend ; reconnectez-vous si le rechargement du module a fermé le canal.
+### TODO 1 — Typer le registre · 4 min
 
-## A — Envoyer depuis le formulaire · 20 min
+Remplacez les deux `unknown` de la `Map` : clé = objet `WebSocket` importé de `ws` ; valeur = chaîne. Gardez la propriété sur la classe, sans la recréer dans les hooks ni dans le gestionnaire.
 
-### Repérer le trajet · 4 min
+### TODO 2 — Associer un identifiant serveur · 6 min
 
-Dans `App.vue`, trouvez `@submit.prevent="sendMessage"`, le `v-model="draft"` et la liste. Dans `useChat.js`, identifiez `draft`, `messages`, `notice` et `connection.getSocket()`. La fonction de réception est déjà branchée par `useConnection` ; ne modifiez pas ses écouteurs.
+Dans `handleConnection`, ajoutez `client` au registre avec un identifiant issu de `randomUUID()`. L’import est fourni. Utilisez `set`. Chaque nouvelle connexion doit obtenir son identifiant ; les messages ultérieurs retrouvent celui-ci avec `get(sender)`.
 
-### TODO 1 · Contrôler l’état · 5 min
+### Observer · 4 min
 
-Dans `sendMessage`, remplacez `false` par la condition qui refuse l’envoi si l’objet n’existe pas **ou** si son état n’est pas `WebSocket.OPEN`. Le message et le `return` sont fournis. Le contrôle de saisie qui suit est également fourni.
+Le backend n’a pas de surveillance automatique : arrêtez-le et relancez `npm run dev:back` après vos modifications. Reconnectez A, B et C avec Réessayer ou Atelier → Connecter. Le terminal doit indiquer successivement 1, 2, 3 connexions. N’envoyez pas encore de message pour valider cette étape : la diffusion est le prochain exercice. Le nettoyage n’est pas encore implémenté ; redémarrez pour repartir d’un registre vide si nécessaire.
 
-**Vérification :** dans Atelier, cliquez sur Déconnecter, puis revenez dans général : le bouton Envoyer est désactivé. Pour vérifier aussi la fonction, retirez temporairement `:disabled="!canClose"` du seul bouton Envoyer, soumettez un brouillon et vérifiez le diagnostic sans perte du texte. Rétablissez ensuite cet attribut, puis cliquez sur Réessayer.
-
-### TODO 2 · Sérialiser et envoyer · 8 min
-
-Remplacez la consigne temporaire dans le `try` par :
-
-1. une enveloppe `chat:send`, avec `data.content` ;
-2. sa sérialisation et son envoi ;
-3. le vidage de `draft.value` et une information « Envoi demandé ; attente de la réponse ».
-
-Extrait de référence à adapter :
-
-```js
-const request = { event: 'chat:send', data: { content } };
-socket.send(JSON.stringify(request));
-```
-
-N’ajoutez rien à `messages`. Ne faites pas `await socket.send(...)`.
-
-### Vérifier l’étape · 3 min
-
-Dans Réseau → WebSocket → `:3000/chat` → Messages (ou Frames), envoyez « Bonjour ». Une trame sortante doit contenir le JSON. À ce stade, le backend du squelette ne renvoie rien pour un texte valide. C’est normal jusqu’aux TODO 3–4. Ne confondez pas cette connexion avec celle de Vite.
-
-## B — Traiter sur le serveur · 20 min
+## B — Diffuser les messages · 25 min
 
 ### Capsule de live coding · 5 min
 
-Regardez la capsule 2 ou lisez sa transcription dans `videos.md`. Repérez le décorateur, `data`, le contrôle fourni et la valeur retournée.
+Regardez la [capsule 2](videos.md#capsule-2--écrire-la-boucle-de-diffusion--5-min) ou lisez sa transcription. Repérez ce qui reste avant la boucle : contenu contrôlé, auteur, id du message, date et sérialisation.
 
-### TODO 3 · Construire le message · 6 min
+### TODO 3 — Préparer une enveloppe commune · 6 min
 
-Dans `handleMessage`, après le contrôle de contenu, créez `message` avec :
+Le message enrichi, y compris le nom d’affichage `senderName`, est fourni. L’accueil privé `chat:welcome` est également fourni après l’inscription au registre ; il permet à l’interface de reconnaître vos messages sans ajouter de bulle. Créez `payload`, une chaîne obtenue par `JSON.stringify` de `{ event: 'chat:message', data: message }`. Faites-le avant la boucle. Tous les clients doivent recevoir le même identifiant de message et le même horodatage.
 
-- `id` : appel à `randomUUID()`, déjà importé ;
-- `content` : texte contrôlé et normalisé, déjà disponible ;
-- `createdAt` : date courante sérialisée avec `toISOString()`.
+### TODO 4 — Choisir les destinataires et transmettre · 9 min
 
-Ne reprenez pas d’identifiant ou de date envoyés par le navigateur. N’écrivez pas une date fixe copiée du cours.
+Parcourez `this.clients.keys()`. Pour chaque `client`, vérifiez `client.readyState === WebSocket.OPEN`, puis transmettez `payload` avec `client.send(...)`.
 
-### TODO 4 · Répondre à l’émetteur · 5 min
+- N’excluez pas `sender` : il doit recevoir le message comme les autres.
+- Ne retournez pas `chat:message` après la boucle : ce serait une réponse supplémentaire au demandeur.
+- Conservez le retour `chat:error` avant la boucle : un refus reste privé.
+- Ne modifiez pas `messages` dans la fonction d’envoi du frontend.
 
-Remplacez le `return` temporaire par l’enveloppe `chat:message`, dont `data` contient `message`. Le retour sera envoyé par `WsAdapter` au client demandeur. Ne sérialisez pas manuellement ce retour et n’ajoutez pas de diffusion.
+Indice de syntaxe : `for (const valeur of collection) { /* ... */ }`.
 
-### Vérifier l’étape · 4 min
+### Vérifier · 5 min
 
-Redémarrez le backend, reconnectez-vous et envoyez « Bonjour ». Dans le panneau réseau, relevez la demande puis la réponse avec ses trois champs. La liste peut encore être vide : les TODO de réception ne sont pas terminés.
+Redémarrez le backend et reconnectez les trois fenêtres. Depuis A, envoyez `A-1`. Chacune doit ajouter une ligne. Dans les trames, comparez `id`, `senderId` et `createdAt` : ils doivent être identiques entre destinataires. Envoyez ensuite `B-1` depuis B : un nouvel `id` et un autre `senderId` doivent apparaître partout. Chaque fenêtre peut afficher un ancien historique différent ; comptez les **nouvelles** entrées.
 
-## C — Recevoir et afficher · 20 min
+## C — Nettoyer et vérifier · 20 min
 
-### Lire la fiche de référence · 4 min
+### TODO 5 — Retirer les connexions fermées · 4 min
 
-Distinguez événement natif, enveloppe applicative, décodage et contrôle de forme.
+Complétez `handleDisconnect` avec `this.clients.delete(client)`. La garde `OPEN` évite un envoi inadapté ; `delete` libère la référence. Redémarrez puis reconnectez les trois fenêtres. Déconnectez C via Atelier. Attendez que le journal serveur passe de 3 à 2. Reconnectez C : le compteur revient à 3.
 
-### TODO 5 · Décoder dans le `try` · 5 min
+### TODO 6 — Diagnostiquer un double écouteur · 6 min
 
-Dans `receiveMessage(event)`, remplacez `const response = undefined` : refusez une donnée dont le type n’est pas `string`, puis décodez `event.data` avec `JSON.parse`. Gardez le traitement fourni de `chat:error`.
+L’exercice consiste à provoquer puis corriger un défaut local. Sauvegardez `frontend/src/useConnection.js`. Juste après la ligne `current.addEventListener('message', receive)`, ajoutez temporairement :
 
-Indice : pour faire passer une donnée non conforme dans le `catch`, utilisez `throw new Error('Texte attendu')`.
+```js
+// Défaut volontaire pour le diagnostic S4 — à retirer après observation.
+current.addEventListener('message', (event) => receive(event));
+```
 
-### TODO 6 · Contrôler et ajouter · 5 min
+Rechargez complètement les trois pages pour remplacer les anciens sockets. Attendez trois connexions ouvertes. Envoyez `Diagnostic-1` une seule fois depuis A. Dans une fenêtre, relevez le nombre de trames `chat:message` reçues et le nombre d’appels à `receiveMessage` (point d’arrêt ou `console.count('receiveMessage')` au début de cette fonction). Deux ajouts peuvent aussi produire un avertissement Vue sur les clés dupliquées : une même réponse a été ajoutée deux fois.
 
-Appelez `isChatMessage(response)`. Si le résultat est faux, levez une erreur. Sinon, ajoutez `response.data` dans `messages.value`, puis annoncez la réception. Le composant fourni se met à jour grâce à la liste réactive. Aucune manipulation directe du DOM n’est nécessaire.
+Expliquez pourquoi il n’y a qu’une trame mais deux traitements. **Retirez la ligne ajoutée**, gardez l’écouteur `receive` d’origine et son `removeEventListener` existant. Retirez l’instrumentation temporaire, rechargez les pages, puis refaites un envoi : une trame, un traitement, une entrée. Ne corrigez pas en filtrant les textes identiques ou en ajoutant une déduplication qui masquerait la cause.
 
-### TODO 7 · Protéger la suite · 3 min
+Si le diagnostic prend plus de temps, privilégiez la comparaison trames/appels plutôt que la mise en forme des captures.
 
-Dans le `catch`, renseignez `notice.value` pour indiquer que la réponse invalide est ignorée. Conservez la liste existante. Ne relancez pas l’exception et ne fermez pas la connexion.
+### Recette à trois clients · 10 min
 
-### Vérifier · 3 min
+Exécutez la [matrice T1–T7](tests-et-validation.md). Conservez vos relevés. La fermeture de C doit laisser A et B discuter ; après sa reconnexion manuelle, C reçoit de nouveau les prochains messages sans doublon.
 
-Envoyez un texte et observez son apparition. Ouvrez l’onglet Atelier, cliquez « JSON cassé » dans « Simuler une réponse reçue », puis revenez dans général et envoyez un deuxième texte réel. L’erreur doit être visible et la deuxième réponse doit s’ajouter normalement.
+## D — Corriger et expliquer · 10 min
 
-Ces boutons appellent localement le même gestionnaire avec des données brutes. Ils testent le décodage, mais ne constituent pas la preuve d’un aller-retour réseau.
+Consacrez 5 minutes à la comparaison avec [le corrigé](corriges.md), 2 minutes à la [fiche de synthèse](fiche-reference.md), puis 3 minutes aux questions de bilan dans la recette. Expliquez à voix haute le trajet d’un message de B jusqu’aux trois listes.
 
-## D — Tester et corriger · 15 min
-
-Suivez `tests-et-validation.md` : 9 min de recette, 4 min de comparaison, 2 min de bilan. À rendre : les deux fichiers complétés, la matrice et une preuve de demande/réponse réseau accompagnée de l’affichage. Terminez en arrêtant les services avec Ctrl+C.
+À rendre : `chat.gateway.ts`, `useConnection.js` après correction, matrice renseignée, un relevé des trames communes aux trois clients, le compteur avant/après fermeture et une courte explication du double écouteur. Arrêtez les services avec Ctrl+C.

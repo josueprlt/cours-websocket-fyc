@@ -4,14 +4,14 @@ import { useChat } from './useChat';
 import MessageList from './MessageList.vue';
 import { responseFixtures } from './responseFixtures';
 const panel = ref('chat');
-const { url, readyState, information, journal, label, canConnect, canClose, connect, disconnect, draft, messages, notice, sendMessage, receiveMessage } = useChat();
+const { url, readyState, information, journal, label, canConnect, canClose, connect, disconnect, draft, username, messages, notice, sendMessage, receiveMessage } = useChat();
 </script>
 
 <template>
   <main class="mx-auto max-w-6xl px-3 py-5 sm:px-8 sm:py-10">
     <header class="mb-6 flex items-center justify-between gap-4">
       <div>
-        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-700">Atelier WebSocket / 03</p>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-700">Atelier WebSocket / 04</p>
         <h1 class="text-3xl font-semibold tracking-tight">Le Salon<span class="text-teal-600">.</span></h1>
       </div>
       <span class="hidden text-sm text-slate-500 sm:block">Un espace pour échanger.</span>
@@ -25,14 +25,18 @@ const { url, readyState, information, journal, label, canConnect, canClose, conn
           <button type="button" @click="panel = 'tools'" :aria-pressed="panel === 'tools'" :class="panel === 'tools' ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-600 hover:bg-white/60'" class="rounded-xl px-4 py-3 text-left text-sm font-medium"><span aria-hidden="true" class="mr-2">⚙</span> Atelier</button>
         </nav>
         <div class="ml-auto flex items-center gap-3 md:ml-0 md:mt-auto md:border-t md:border-slate-300 md:pt-5">
-          <span aria-hidden="true" class="flex h-9 w-9 items-center justify-center rounded-full bg-teal-800 text-xs font-bold text-white">VO</span>
-          <div><p class="text-sm font-semibold">Vous</p><p class="text-xs text-slate-500">Espace de pratique</p></div>
+          <span aria-hidden="true" class="flex h-9 w-9 items-center justify-center rounded-full bg-teal-800 text-xs font-bold text-white">{{ (username.trim() || 'Vous').slice(0, 2).toUpperCase() }}</span>
+          <div class="min-w-0">
+            <label for="username" class="sr-only">Votre nom d’utilisateur</label>
+            <input id="username" v-model="username" maxlength="32" autocomplete="off" placeholder="Vous" title="Cliquez pour modifier votre nom" @blur="username = username.trim() || 'Vous'" @keydown.enter="$event.target.blur()" class="w-28 max-w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-300 focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-600/20" />
+            <p class="text-xs text-slate-500">Espace de pratique</p>
+          </div>
         </div>
       </aside>
 
       <section v-show="panel === 'chat'" aria-labelledby="chat-title" class="flex min-w-0 flex-col">
         <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:px-8">
-          <div><h2 id="chat-title" class="text-lg font-semibold"><span class="mr-2 text-teal-600">#</span> général</h2><p class="mt-1 text-xs text-slate-500">Votre conversation avec le serveur</p></div>
+          <div><h2 id="chat-title" class="text-lg font-semibold"><span class="mr-2 text-teal-600">#</span> général</h2><p class="mt-1 text-xs text-slate-500">Une conversation partagée entre les clients connectés</p></div>
           <p role="status" class="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-xs font-medium"><span aria-hidden="true" class="h-2 w-2 rounded-full" :class="canClose ? 'bg-teal-500' : 'bg-amber-500'"></span>{{ label }}</p>
         </header>
         <div v-if="canConnect" role="status" class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-100 bg-amber-50 px-5 py-3 text-sm text-amber-900">
@@ -72,7 +76,7 @@ const { url, readyState, information, journal, label, canConnect, canClose, conn
         </section>
         <section aria-labelledby="fixtures-title" class="mt-4 rounded-2xl border border-slate-200 p-5">
           <h3 id="fixtures-title" class="font-semibold">Simuler une réponse reçue</h3>
-          <p class="my-3 text-sm text-slate-500">Injection locale, sans envoi réseau. À utiliser après les TODO 5 à 7.</p>
+          <p class="my-3 text-sm text-slate-500">Injection locale, sans envoi réseau. Vérification des acquis de S3, facultative ici.</p>
           <div class="flex flex-wrap gap-2">
             <button v-for="fixture in responseFixtures" :key="fixture.label" type="button" @click="receiveMessage({ data: fixture.raw })" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">{{ fixture.label }}</button>
           </div>
@@ -88,6 +92,6 @@ const { url, readyState, information, journal, label, canConnect, canClose, conn
         </details>
       </section>
     </div>
-    <footer class="mt-4 text-center text-xs text-slate-500">S3 · Les messages restent dans cet onglet le temps de votre visite.</footer>
+    <footer class="mt-4 text-center text-xs text-slate-500">S4 · Les messages restent dans cet onglet le temps de votre visite.</footer>
   </main>
 </template>

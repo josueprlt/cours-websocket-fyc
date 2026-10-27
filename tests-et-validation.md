@@ -1,63 +1,63 @@
-# Recette de S3 — Envoyer, recevoir, continuer après une erreur
+# Recette S4 — Trois clients, une copie par fenêtre
 
-**15 minutes :** 9 min de tests, 4 min de comparaison avec le corrigé, 2 min de bilan. Terminez les sept TODO avant cette recette. Ouvrez le panneau Réseau de la connexion `:3000/chat` et la section Atelier de l’interface.
+**10 minutes dans l’étape Nettoyer et vérifier**, après les TODO 1–6. Les 10 dernières minutes de la séance servent ensuite à la correction et au bilan. Lancez un seul backend et un seul frontend, puis trois fenêtres A, B, C. Attendez leur état Connecté et un registre de taille 3. Ne laissez pas de quatrième onglet de test ouvert.
 
-## Jeu de données et matrice à renseigner
+Dans chaque fenêtre, ouvrez Réseau → WebSocket → `:3000/chat` → Messages. Le frontend utilise une connexion par page. L’accueil privé `chat:welcome` à chaque ouverture ne crée pas de bulle : comptez uniquement les trames `chat:message` pour les diffusions. Les messages du canal Vite et les simulations de réponses invalides ne comptent pas comme messages de chat.
 
-| Test | Données / manipulation | Attendu | Observation / acquis ? |
-|---|---|---|---|
-| T1 · Aller-retour | Attendre la connexion automatique, envoyer `Bonjour le salon` | Une demande `chat:send`, une réponse `chat:message` avec id et date serveur ; une seule ligne ajoutée sans rechargement | |
-| T2 · Plusieurs envois | Envoyer successivement `Un`, `Deux`, `Un` | Trois lignes supplémentaires dans cet ordre, trois identifiants distincts malgré le texte répété | |
-| T3 · Texte et espaces | Envoyer `  Salut 👋 — café  ` puis `<b>Bonjour</b>` | Extrémités nettoyées, accents/emoji conservés ; balises visibles comme texte | |
-| T4 · Entrée vide | Envoyer trois espaces | Diagnostic local, aucune trame de chat sortante, aucune ligne ajoutée, brouillon conservé | |
-| T5 · Hors connexion | Dans Atelier, Déconnecter ; revenir dans général et observer le bouton puis faire le contrôle de fonction décrit dans TP A | Bouton désactivé ; même appelé directement, le gestionnaire refuse l’envoi sans vider le brouillon | |
-| T6 · Réponses invalides | Reconnecter, noter le nombre de lignes ; cliquer chacun des cinq boutons Atelier | Chaque cas affiche un diagnostic ; nombre de lignes inchangé, connexion toujours ouverte | |
-| T7 · Reprise du travail | Après T6, envoyer `Après l’erreur` | Réponse réelle affichée une seule fois, anciennes lignes conservées | |
+## Matrice à remplir
 
-Le jeu de réponses brutes est fourni dans `frontend/src/responseFixtures.js` dans les deux projets : JSON tronqué, champs manquants, contenu numérique, date invalide et `null`. Les boutons n’injectent aucune réponse valide et n’ajoutent donc pas de faux messages à votre preuve réseau.
+Comptez les **ajouts** par rapport à l’état avant chaque ligne. Comparez les UUID complets dans les trames. Attendez le résultat d’une ligne avant de commencer la suivante.
 
-### Vérifications complémentaires si vous avancez vite
+| Test | Action | A : ajout attendu | B : ajout attendu | C : ajout attendu | Autre preuve attendue | Observé / acquis ? |
+|---|---|---:|---:|---:|---|---|
+| T1 | A envoie `A-1` | +1 | +1 | +1 | Une trame reçue par fenêtre ; mêmes id, auteur et date | |
+| T2 | B envoie `B-1`, puis C envoie `C-1` | +2 | +2 | +2 | Deux id distincts ; auteurs B et C distincts de A | |
+| T3 | A envoie deux fois `Encore` | +2 | +2 | +2 | Deux id distincts, même senderId ; ne pas supprimer le second texte | |
+| T4 | C clique Déconnecter ; attendre sa fermeture ; A envoie `Sans C` | +1 | +1 | 0 | Registre 3 → 2 ; aucun envoi vers C | |
+| T5 | C clique Connecter ; attend Connecté ; envoie `C revient` | +1 | +1 | +1 | Registre 2 → 3 ; nouveau senderId pour C ; aucun rejeu de `Sans C` | |
+| T6 | Dans C, effectuer encore deux cycles Déconnecter/Connecter en attendant les états, puis B envoie `Après les cycles` | +1 | +1 | +1 | Registre alterne 2/3 sans croissance ; une trame et un ajout par fenêtre | |
+| T7 | Fermer les trois fenêtres | — | — | — | Après observation des fermetures, registre 3 → 2 → 1 → 0 | |
 
-- **Limite :** coller 500 lettres `a`, puis essayer une lettre supplémentaire. Le champ empêche le dépassement ; le serveur applique aussi sa limite. Pour vérifier le serveur indépendamment du champ, utilisez le client console ci-dessous.
-- **Deux onglets :** ouvrir A et B et attendre leur connexion automatique, envoyer depuis A. Seul A reçoit une nouvelle ligne. La diffusion sera construite en S4.
-- **Reconnexion manuelle :** déconnecter puis reconnecter trois fois, envoyer une fois : une seule réponse ajoutée. Cela contrôle le retrait des anciens écouteurs.
+T4 utilise le bouton Déconnecter pour conserver visuellement l’historique de C. T7 ferme réellement les fenêtres. Après T1–T6, si les listes étaient initialement vides et si aucun autre message n’a été envoyé, A et B ont 8 entrées ; C en a 7. Un rechargement efface sa liste, une simple déconnexion manuelle la conserve.
 
-Client temporaire dans la console du navigateur pour vérifier le refus backend (facultatif) :
+## Relevé du diagnostic obligatoire
 
-```js
-const probe = new WebSocket('ws://127.0.0.1:3000/chat');
-probe.addEventListener('message', (event) => {
-  console.log(JSON.parse(event.data)); // attendu : chat:error
-  probe.close(1000, 'Test terminé');
-});
-probe.addEventListener('open', () => {
-  probe.send(JSON.stringify({ event: 'chat:send', data: { content: 'a'.repeat(501) } }));
-});
-```
+| État de l’exercice TODO 6 | Trames entrantes pour un envoi | Appels à receiveMessage | Nouvelles entrées |
+|---|---:|---:|---:|
+| Avec la fonction anonyme ajoutée | 1 | 2 | 2 |
+| Après retrait et rechargement complet | 1 | 1 | 1 |
 
-Ce client a sa propre connexion : sa réponse ne doit pas apparaître dans la liste de l’application. Remplacer le contenu par `42` permet de vérifier le contrôle du type.
+Joignez une courte explication de la cause et de la correction. Un avertissement de clés Vue dupliquées peut accompagner le défaut : ce n’est pas la liste Vue qui doit supprimer les doublons, c’est l’enregistrement des écouteurs qui doit être corrigé.
 
-## Comprendre un écart
+## Aide au diagnostic
 
-| Observation | À vérifier |
+| Symptôme | Piste |
 |---|---|
-| La page recharge | `@submit.prevent` a-t-il été conservé ? |
-| Trame sortante avec `[object Object]` | Avez-vous sérialisé l’objet ? |
-| Aucune réponse à une demande | Nom exact `chat:send`, enveloppe `data`, retour du backend et redémarrage |
-| Le serveur répond mais rien ne s’affiche | Décodage de `event.data`, validation, ajout de `response.data` |
-| Une réponse apparaît deux fois | Ajout local à l’envoi ou écouteur supplémentaire |
-| Les anciennes lignes disparaissent après T6 | Le `catch` ne doit modifier que le diagnostic |
-| Une deuxième fenêtre reste vide | Résultat normal en S3 : réponse uniquement à l’émetteur |
+| Aucun message n’arrive | Vérifier `set`, `get(sender)`, la boucle, `OPEN`, et le redémarrage backend |
+| Les autres reçoivent mais l’émetteur reste vide | Retirer une exclusion de `sender` ; conserver l’affichage seulement à réception |
+| Deux trames uniquement chez l’émetteur | Retirer le retour `chat:message` après la diffusion |
+| Une trame, deux appels du gestionnaire | Chercher le deuxième callback `message` |
+| Même envoi mais id différents selon la fenêtre | Construire le message avant la boucle |
+| Une trame, aucun affichage | Vérifier le contrat S4, notamment `senderId` et le diagnostic frontend |
+| Le compteur grandit après les reconnexions | Vérifier `delete(client)` dans le hook de déconnexion |
+| Nouveau client sans anciens messages | Normal : aucune persistance ni rediffusion de l’historique |
 
-## Bilan et remise
+## Vérifications complémentaires, hors chronométrage obligatoire
 
-Répondre brièvement :
+Le corrigé teste automatiquement le refus privé : un contenu vide, numérique ou trop long produit `chat:error` seulement pour le demandeur. Vous pouvez aussi vérifier les espaces, les accents et les balises affichées comme texte, acquis de S3. Aucun test d’accumulation de données n’est requis.
 
-1. Pourquoi `send()` ne suffit-il pas à prouver l’aller-retour ?
-2. Quelle différence entre `message` et `chat:message` ?
-3. Pourquoi `JSON.parse` et `isChatMessage` sont-ils tous deux nécessaires ?
-4. Qui attribue l’identifiant et la date, et pourquoi ?
+Depuis `projet-corrige` : `npm ci`, puis `npm test` (backend sur port éphémère, aucun serveur manuel nécessaire) et `npm run build` (compilation des deux workspaces). Ces tests automatisés complètent la recette ; ils ne remplacent pas l’observation des trois interfaces par l’apprenant.
 
-Remettre les deux fichiers complétés, la matrice T1–T7 et une capture ou un relevé comportant la demande JSON, la réponse JSON et son entrée visible. Les injections locales ne remplacent pas T1.
+## Bilan et remise · pendant les 10 dernières minutes
 
-**Critère de passage :** aller-retour réel visible sans rechargement, plusieurs envois distincts et poursuite normale après une réponse mal formée. La conservation après rechargement et l’échange entre utilisateurs ne sont pas évalués.
+1. Racontez le trajet de `B-1`, du formulaire de B aux listes A, B et C.
+2. Distinguez `id` et `senderId`. Que change la reconnexion de C ?
+3. Pourquoi la garde `OPEN` ne remplace-t-elle pas `delete` ?
+4. Comment distinguer le double écouteur d’un retour serveur en trop ?
+5. Pourquoi une valeur nulle de `bufferedAmount` ne prouve-t-elle pas l’affichage distant ?
+
+Remettez les fichiers indiqués dans le TP, la matrice, les preuves réseau et de nettoyage, et le relevé du diagnostic. **Validation :** chacun des trois clients peut écrire ; chaque envoi accepté apparaît une seule fois chez tous les clients ouverts, y compris l’émetteur ; les connexions fermées quittent le registre ; une reconnexion manuelle n’ajoute pas de traitement en double. L’application ne promet pas une livraison « exactement une fois » après panne ou retransmission : la recette valide ce parcours connecté et maîtrisé.
+
+## Vérification de l’interface personnalisée
+
+Dans A, cliquez sur « Vous » en bas à gauche et saisissez Alice ; dans B, saisissez Bob. Envoyez depuis chaque fenêtre : son propre message apparaît à gauche en vert avec « (vous) », celui de l’autre à droite en gris. Les noms apparaissent au-dessus des bulles. Changez ensuite le nom de B en Alice : ses messages restent ceux d’un autre client dans A. Les nouveaux messages portent le nouveau nom, les précédents gardent leur nom d’origine. Vérifiez aussi que le champ est accessible au clavier, qu’Entrée quitte l’édition et qu’un nom vide redevient « Vous » en quittant le champ.

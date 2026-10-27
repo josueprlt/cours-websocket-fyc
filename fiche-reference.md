@@ -1,56 +1,47 @@
-# Fiche de référence — Messages texte et JSON
+# Fiche de synthèse — Diffusion S4
 
-La connexion démarre automatiquement au montage de l’interface. Le chat est affiché par défaut ; l’onglet **Atelier** rassemble les contrôles de connexion, le journal et les simulations. Après un échec ou une fermeture, utilisez **Réessayer** dans le chat ou **Connecter** dans Atelier. La reprise automatique après coupure reste pour S5.
+**Une demande → un message serveur → une copie par connexion ouverte, émetteur inclus.**
 
-À garder à côté du TP. La connexion S2 est fournie.
+```text
+Formulaire → chat:send → validation serveur → message commun
+                                               ↓
+                                         JSON.stringify
+                                               ↓
+                                   Map : pour chaque socket OPEN
+                                      ↙        ↓        ↘
+                                     A         B         C
+                                      → réception → liste Vue
+```
 
-| Étape | Dans ce projet | Piège à éviter |
+| Besoin | Patron | Attention |
 |---|---|---|
-| Soumission | `@submit.prevent="sendMessage"` | Recharger la page avec le formulaire |
-| Disponibilité | `socket && socket.readyState === WebSocket.OPEN` | Se fier seulement au bouton ou à un ancien badge |
-| Encodage | `JSON.stringify({ event: 'chat:send', data: { content } })` | Envoyer directement l’objet |
-| Envoi | `socket.send(texte)` | Croire obtenir la réponse en valeur de retour |
-| Serveur | `@MessageBody()` reçoit `data` décodé | Refaire `JSON.parse(data)` |
-| Réponse | Retourner `{ event: 'chat:message', data: message }` | Diffuser aux autres clients |
-| Réception | Callback natif `message`, propriété `event.data` | Confondre `event.data` et `response.data` |
-| Décodage | `JSON.parse(event.data)` dans le `try` | Laisser une erreur de syntaxe sans diagnostic |
-| Contrôle | `isChatMessage(response)` fourni | Prendre tout JSON valide pour un message |
-| Affichage | `messages.value.push(response.data)` | Ajouter aussi une entrée à l’envoi |
-| Erreur | Modifier `notice.value` dans le `catch` | Effacer les anciens messages ou fermer le canal |
+| Conserver les connexions | `new Map<WebSocket, string>()` sur la classe | Pas de nouvelle collection par message |
+| Identifier à l’ouverture | `clients.set(client, randomUUID())` | Identité de connexion, pas de compte |
+| Retrouver l’auteur | `clients.get(sender)` | Ne pas accepter un auteur fourni par le client |
+| Identifier un message | `id: randomUUID()` avant la boucle | Même id chez tous les destinataires |
+| Sérialiser | `JSON.stringify({ event: 'chat:message', data: message })` | Une fois avant la boucle |
+| Parcourir | `for (const client of clients.keys())` | Inclure l’émetteur |
+| Vérifier l’état | `client.readyState === WebSocket.OPEN` | Pour chaque destinataire |
+| Transmettre | `client.send(payload)` | Pas de retour `chat:message` après diffusion |
+| Retirer à la fermeture | `clients.delete(client)` | La garde OPEN ne libère pas la référence |
+| Afficher | Un seul callback de réception ajoute à la liste | Aucun ajout local à l’envoi |
+| Retirer l’écouteur | `removeEventListener('message', receive)` | Même référence que lors de l’ajout |
 
-## Deux sens du mot « événement »
+`WebSocket` vient de `ws` côté serveur, de l’API native côté navigateur. Le câblage `WsAdapter` reste inchangé. La demande contient `{ content, senderName }` ; la diffusion contient `{ id, senderId, senderName, content, createdAt }`. Le nom est modifiable dans le champ discret « Vous ». L’accueil privé `chat:welcome` fournit le `senderId` local pour distinguer vos messages (gauche, vert) des autres (droite, gris). Un refus `chat:error` reste privé.
 
-```js
-// Événement natif émis par WebSocket : câblage déjà fourni.
-socket.addEventListener('message', receiveMessage);
-// Nom applicatif à l’intérieur du JSON :
-const response = { event: 'chat:message', data: { /* champs du contrat */ } };
-```
+## Deux identifiants
 
-`chat:error` arrive également dans `message` ; ce n’est pas l’événement réseau `error`.
+- `id` : nouveau pour chaque message accepté. Identique dans toutes ses copies.
+- `senderId` : stable pendant une connexion, nouveau après reconnexion. Utilisé pour reconnaître vos messages ; consultable au survol de la mention sous la bulle.
 
-## Patron de réception
+## Diagnostiquer les doublons
 
-```js
-try {
-  if (typeof event.data !== 'string') throw new Error('Texte attendu');
-  const response = JSON.parse(event.data);
-  // Garder ici le cas chat:error fourni dans le squelette.
-  if (!isChatMessage(response)) throw new Error('Réponse hors contrat');
-  messages.value.push(response.data);
-} catch {
-  notice.value = 'Réponse invalide ignorée ; vous pouvez continuer.';
-}
-```
+- **Deux trames chez A, une chez B/C** : chercher un retour serveur après la boucle.
+- **Une trame, deux traitements** : chercher deux fonctions enregistrées pour `message`.
+- **Une trame, une réception mais deux ajouts** : chercher aussi un ajout optimiste à l’envoi.
 
-Dans le script Vue, une `ref` utilise `.value` ; le template la déballe automatiquement. Le composant fourni échappe le texte avec l’interpolation, utilise `id` pour sa clé et convertit `createdAt` pour l’affichage local.
+Deux envois réels du même texte restent deux messages. La clé Vue ne constitue pas un mécanisme de déduplication.
 
-## Diagnostic rapide
+> **bufferedAmount :** quantité d’octets encore en attente d’envoi. Ce n’est pas le nombre de destinataires, ni un accusé de réception. Pas de laboratoire d’accumulation dans S4.
 
-- Rien ne sort : vérifier connexion, TODO 1–2 et le bon panneau `:3000/chat`.
-- Sortie sans réponse : vérifier `chat:send`, `data.content`, TODO 3–4 et redémarrage du backend.
-- Réponse visible dans Réseau mais liste vide : vérifier TODO 5–6 et les champs.
-- Réponse en double : chercher un deuxième écouteur ou un ajout à l’envoi.
-- Erreur après injection : vérifier le diagnostic et refaire un envoi réel.
-
-Binaire : possible avec WebSocket, hors exercice ; ce contrat attend du texte JSON. Sources de l’API : [send()](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send) et [message](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/message_event).
+Le registre vit en mémoire dans un processus. Le nouvel arrivant reçoit seulement les prochains messages ; la reconnexion reste manuelle. Pour finir : trois clients, une copie chacun, registre à zéro après fermeture des trois fenêtres.

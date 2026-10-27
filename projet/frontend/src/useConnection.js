@@ -78,7 +78,7 @@ export function useConnection(onMessage = () => {}) {
     record('close demandé');
   }
 
-  // Fourni en S3 : une ouverture au montage ; les reprises restent manuelles.
+  // Acquis de S3 : une ouverture au montage ; les reprises restent manuelles.
   onMounted(connect);
 
   // Fourni : libérer la connexion quand l’interface est démontée.
